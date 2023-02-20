@@ -1,8 +1,10 @@
 import setting
-import discord
-from discord.ext import commands
+from setting import logger
+from database import Database
 
-logger = setting.logging.getLogger("bot")
+import discord
+from discord import app_commands
+from discord.ext import (commands)
 
 def run():
     #NOTE: Discord Bot Intents
@@ -15,8 +17,14 @@ def run():
     @bot.event
     async def on_ready():
         logger.info(f"Logging in: {bot.user} (ID: {bot.user.id})")
+        await bot.tree.sync()
 
-    @bot.command(
+        #Registers the Discord Server into the DB
+        mongo_client = Database(setting.CLUSTER_LINK, setting.DB_NAME)
+        mongo_client.register_guilds(bot.guilds)
+        logger.info(f"Finished registering guilds")
+
+    @bot.hybrid_command(
         aliases = ['p'],
         help = "This is help",
         description = "This is description",
