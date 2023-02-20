@@ -4,13 +4,13 @@ from setting import logger
 
 import discord
 
-from pymongo import MongoClient
+from pymongo import (MongoClient, database)
 
 class Database():
     __DEFAULT_USER_POINTS__ : int = 1000
 
     def __init__(self, cluster_link: str, database_name: str):
-        self.database = MongoClient(cluster_link).get_database(database_name)
+        self.database: database = MongoClient(cluster_link).get_database(database_name)
 
     class collection_name_types(Enum):
         MEMBER_POINTS = 1
@@ -30,6 +30,22 @@ class Database():
         if collection_name in self.database.list_collection_names():
             return self.database[collection_name]
         pass
+
+    def get_guild_betting_pool_collection(self, guild: discord.Guild):
+        collection_name = self.__get_collection_name(guild, self.collection_name_types.BETTING_POOL)
+        if collection_name in self.database.list_collection_names():
+            return self.database[collection_name]
+        pass
+
+    def insert_betting_record(self, interaction: discord.Interaction, is_doubter: bool, amount: int):
+        collection = self.get_guild_betting_pool_collection(interaction.guild)
+
+        data = collection.find_one({"_id": interaction.user.id})
+        if not data:
+            collection.insert_one({"_id": interaction.user.id, "name": interaction.user.display_name or interaction.user.name, "points": amount, "is_doubter": is_doubter})
+        else:
+            value = data["points"] + amount
+            collection.replace_one({"_id": interaction.user.id}, {"name" : data['name'], "points": value, "is_doubter": is_doubter }, True)
 
     # Registering all Discord servers the bot belongs to.
     def register_guilds(self, guilds: list[discord.Guild]):

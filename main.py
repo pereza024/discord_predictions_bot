@@ -10,7 +10,7 @@ from discord import app_commands
 from discord.ext import (commands)
 
 class Prediction_Bot(commands.Bot):
-    active_competition = None
+    active_competition: Competition = None
 
 def run():
     #NOTE: Discord Bot Intents
@@ -19,6 +19,7 @@ def run():
     intents.members = True
 
 
+    mongo_client = Database(setting.CLUSTER_LINK, setting.DB_NAME)
     bot: Prediction_Bot = Prediction_Bot(command_prefix="$$", intents=intents)
 
     @bot.event
@@ -27,7 +28,6 @@ def run():
         await bot.tree.sync()
 
         #Registers the Discord Server into the DB
-        mongo_client = Database(setting.CLUSTER_LINK, setting.DB_NAME)
         mongo_client.register_guilds(bot.guilds)
         logger.info(f"Finished registering guilds")
 
@@ -48,12 +48,41 @@ def run():
         else:
             #TODO: String Library
             await interaction.response.send_message("Prediction currently running, please wait for it to finish, terminate it early, or refund the amount", ephemeral = True)
+    
+    @bot.tree.command()
+    async def believe(interaction: discord.Interaction, amount: int):
+        member_points_collection = mongo_client.get_guild_points_collection(interaction.guild)
+        member_point_data = member_points_collection.find_one({"_id": interaction.user.id})
+
+        logger.info(f"Guild: {interaction.guild}, Finding this user: {member_point_data['name']} (ID: {member_point_data['_id']})")
+        
+        if bot.active_competition:
+        #TODO: Do not allow a negative bet
+            for user in bot.active_competition.doubt.users:
+                if interaction.user.id == user['_id']:
+                    #TODO: String Library
+                    await interaction.response.send_message(f"{interaction.user.mention} you have already chosen your side for this prediction", ephemeral=True)
+                    return
+            if 0 >= member_point_data['points'] or amount >= member_point_data['points']:
+                await interaction.response.send_message(f"{interaction.user.mention} you don't have enough points to make that bet", ephemeral=True)
+                return
+            else:
+                bot.active_competition.add_user_to_pool(interaction, mongo_client, False, amount)
+                value = member_point_data["points"] - amount
+                member_points_collection.replace_one({"_id" : interaction.user.id}, {"name" : member_point_data['name'], "points" : value}, True)
+                await interaction.response.send_message(f"{interaction.user.display_name} has bet {amount} in favor of \"{bot.active_competition.title}\"", ephemeral=False)
+
+        else:
+            #TODO: String Library
+            await interaction.response.send_message(f"{interaction.user.mention} the prediction hasn't started! Either start a prediction or ask an admin in the channel to start one.", ephemeral=True)
+
 
     @bot.hybrid_command(
         aliases = ['p'],
         help = "This is help",
         description = "This is description",
-        brief = "This is brief"
+        brief = "This is brief",
+        hidden = True
     )
     async def ping(ctx):
         """" Answers with pong """
