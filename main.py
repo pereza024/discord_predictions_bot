@@ -174,6 +174,16 @@ def run():
 
         await interaction.response.send_message(language.check_points(interaction.user, data["points"]), ephemeral=True)
 
+    @bot.tree.command()
+    async def check_bet(interaction: discord.Interaction):
+        collection = mongo_client.get_guild_betting_pool_collection(interaction.guild)
+        data = collection.find_one({"_id" : interaction.user.id })
+
+        if data:
+            await interaction.response.send_message(language.check_bet(interaction.user, data["points"]), ephemeral=True)
+        else:
+            await interaction.response.send_message("You don't seem to have a bet.", ephemeral=True)
+
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 
 if __name__ == "__main__":
