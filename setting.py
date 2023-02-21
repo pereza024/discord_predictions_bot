@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 load_dotenv()
 DISCORD_API_TOKEN = os.getenv("DISCORD_API_TOKEN")
 
+CLUSTER_LINK = os.getenv("CLUSTER_LINK")
+DB_NAME = os.getenv("DB_NAME")
+
 LOGGING_CONFIG = {
     "version": 1,
     "disabled_existing_loggers": False,
@@ -45,3 +48,5 @@ LOGGING_CONFIG = {
         },
     },
 }
+
+logger = logging.getLogger("bot")
