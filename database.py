@@ -78,13 +78,12 @@ class Database():
         collection.insert_one({"_id" : member.id, "name" : member.display_name or member.name, "points" : self.__DEFAULT_USER_POINTS__})
 
     def clear_records(self, guild: discord.Guild, is_refund: bool = False):
-        member_points_collection: collection = self.get_guild_points_collection(guild)
-        member_points_records = member_points_collection.find({})
-
         betting_pool_collection: collection = self.get_guild_betting_pool_collection(guild)
         betting_pool_records = betting_pool_collection.find({})
 
         for betting_pool_record in betting_pool_records:
+            member_points_collection: collection = self.get_guild_points_collection(guild)
+            member_points_records = member_points_collection.find({})
             for member_points_record in member_points_records:
                 if betting_pool_record['_id'] == member_points_record['_id']:
                     if is_refund:

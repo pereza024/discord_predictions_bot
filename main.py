@@ -59,7 +59,7 @@ def run():
         #Registers the Discord Server into the DB
         mongo_client.register_guilds(bot.guilds)
         logger.info(f"Finished registering guilds")
-        # check_server_member_status()
+        check_server_member_status()
 
     @bot.event
     async def on_member_join(member: discord.Member):
