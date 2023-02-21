@@ -201,33 +201,6 @@ def run():
         else:
             await interaction.response.send_message("You don't seem to have a bet.", ephemeral=True)
 
-    @bot.tree.command()
-    @app_commands.check(is_owner)
-    @app_commands.choices(winner_type =[
-        Choice(name="Believer", value=0),
-        Choice(name="Doubter", value=1)
-    ])
-    async def winner(interaction: discord.Interaction, winner_type: discord.app_commands.Choice[int]):
-        if bot.active_competition:
-            if bot.active_competition.believe.amount == 0 and bot.active_competition.doubt.amount == 0:
-                await interaction.response.send_message("Ending contest. Nothing to declare a winner on! No bets made")
-                bot.Timer = -1
-                bot.end_time = -1
-                bot.active_competition.clear_competition(mongo_client)
-                bot.active_competition = None
-                return
-            await interaction.response.send_message(language.winning_text(bot.active_competition, winner_type.value))
-            bot.active_competition.declare_winner(mongo_client, winner_type.value)
-            await bot.active_competition.clear_competition(mongo_client)
-            bot.active_competition = None
-            pass
-        else:
-            #TODO: Create a dictionary of strings
-            await interaction.response.send_message("Nothing to declare a winner on! No prediction running.", ephemeral = True)
-    @winner.error
-    async def say_error(interaction: discord.Interaction, error):
-        logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
-        await interaction.response.send_message("Not Allowed!", ephemeral = True)
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 
 if __name__ == "__main__":
