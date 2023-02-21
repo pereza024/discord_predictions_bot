@@ -66,7 +66,7 @@ class Database():
             else:
                 pass
     
-    def clear_records(self, guild: discord.Guild):
+    def clear_records(self, guild: discord.Guild, is_refund: bool = False):
         member_points_collection: collection = self.get_guild_points_collection(guild)
         member_points_records = member_points_collection.find({})
 
@@ -76,7 +76,8 @@ class Database():
         for betting_pool_record in betting_pool_records:
             for member_points_record in member_points_records:
                 if betting_pool_record['_id'] == member_points_record['_id']:
-                    print(f"Refunding {member_points_record['name']}: {betting_pool_record['points']} Points")
-                    value = member_points_record['points'] + betting_pool_record['points']
-                    member_points_collection.replace_one({"_id" : member_points_record['_id']}, {"name" : member_points_record['name'], "points" : value}, True)
+                    if is_refund:
+                        print(f"Refunding {member_points_record['name']}: {betting_pool_record['points']} Points")
+                        value = member_points_record['points'] + betting_pool_record['points']
+                        member_points_collection.replace_one({"_id" : member_points_record['_id']}, {"name" : member_points_record['name'], "points" : value}, True)
                     betting_pool_collection.delete_one({"_id": betting_pool_record['_id']})

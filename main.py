@@ -7,6 +7,7 @@ from database import Database
 
 import discord
 from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import (commands)
 
 class Prediction_Bot(commands.Bot):
@@ -107,22 +108,27 @@ def run():
     async def refund(interaction: discord.Interaction, user: discord.User = None):
         if bot.active_competition:
             await interaction.response.send_message(language.endText(bot.active_competition.title, language.end_text_reasons.REFUND), ephemeral = False)
-            bot.active_competition.clear_competition(mongo_client)
+            bot.active_competition.clear_competition(mongo_client, True)
             bot.active_competition = None
         else:
             #TODO: Create a dictionary of strings
             await interaction.response.send_message("Nothing to refund! No prediction running.", ephemeral = True)
 
-    @bot.hybrid_command(
-        aliases = ['p'],
-        help = "This is help",
-        description = "This is description",
-        brief = "This is brief",
-        hidden = True
-    )
-    async def ping(ctx):
-        """" Answers with pong """
-        await ctx.send("pong")
+    @bot.tree.command()
+    @app_commands.choices(winner_type =[
+        Choice(name="Believer", value=0),
+        Choice(name="Doubter", value=1)
+    ])
+    async def winner(interaction: discord.Interaction, winner_type: discord.app_commands.Choice[int]):
+        if bot.active_competition:
+            await interaction.response.send_message(language.winning_text(bot.active_competition, winner_type.value))
+            bot.active_competition.declare_winner(mongo_client, winner_type.value)
+            bot.active_competition.clear_competition(mongo_client)
+            bot.active_competition = None
+            pass
+        else:
+            #TODO: Create a dictionary of strings
+            await interaction.response.send_message("Nothing to declare a winner on! No prediction running.", ephemeral = True)
 
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 
