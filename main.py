@@ -66,6 +66,7 @@ def run():
     async def predict_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
+    
     @bot.tree.command()
     async def believe(interaction: discord.Interaction, amount: int):
         print(f"{bool(bot.active_competition)} & {bot.Timer}")
@@ -165,6 +166,14 @@ def run():
     async def say_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
+    
+    @bot.tree.command()
+    async def check_points(interaction: discord.Interaction):
+        collection = mongo_client.get_guild_points_collection(interaction.guild)
+        data = collection.find_one({"_id" : interaction.user.id })
+
+        await interaction.response.send_message(language.check_points(interaction.user, data["points"]), ephemeral=True)
+
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 
 if __name__ == "__main__":
