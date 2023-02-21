@@ -1,4 +1,5 @@
-import time, datetime
+import time, datetime, random
+from threading import Timer
 
 import setting, language
 from setting import logger
@@ -35,6 +36,19 @@ def run():
     mongo_client = Database(setting.CLUSTER_LINK, setting.DB_NAME)
     bot: Prediction_Bot = Prediction_Bot(command_prefix="$$", intents=intents)
 
+    def check_server_member_status():
+        for guild in bot.guilds:
+            logger.info(f"Polling for points: {guild.name}")
+
+            collection = mongo_client.get_guild_points_collection(guild)
+            for voice_channel in guild.voice_channels:
+                if len(voice_channel.members) > 0:
+                    for member in voice_channel.members:
+                        points = random.randint(90, 125)
+        
+        this = Timer(60, check_server_member_status)
+        this.start()
+
     @bot.event
     async def on_ready():
         logger.info(f"Logging in: {bot.user} (ID: {bot.user.id})")
@@ -43,6 +57,7 @@ def run():
         #Registers the Discord Server into the DB
         mongo_client.register_guilds(bot.guilds)
         logger.info(f"Finished registering guilds")
+        check_server_member_status()
 
     @bot.tree.command()
     @app_commands.check(is_owner)
