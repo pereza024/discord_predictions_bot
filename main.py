@@ -19,7 +19,7 @@ def is_owner(interaction: discord.Interaction):
     allowed_user_ids = [
         116977532573581314, 185202327119069184, 158040090566852609
     ]
-
+    
     for user_id in allowed_user_ids:
         if interaction.user.id == user_id:
             return True
@@ -66,6 +66,7 @@ def run():
     async def predict_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
+        
     @bot.tree.command()
     async def believe(interaction: discord.Interaction, amount: int):
         print(f"{bool(bot.active_competition)} & {bot.Timer}")
@@ -120,7 +121,7 @@ def run():
         else:
             #TODO: String Library
             await interaction.response.send_message(f"{interaction.user.mention} the prediction hasn't started! Either start a prediction or ask an admin in the channel to start one.", ephemeral=True)
-
+            
     @bot.tree.command()
     @app_commands.check(is_owner)
     async def refund(interaction: discord.Interaction, user: discord.User = None):
@@ -137,6 +138,51 @@ def run():
     async def refund_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
+
+    @bot.tree.command()
+    @app_commands.check(is_owner)
+    @app_commands.choices(winner_type =[
+        Choice(name="Believer", value=0),
+        Choice(name="Doubter", value=1)
+    ])
+    async def winner(interaction: discord.Interaction, winner_type: discord.app_commands.Choice[int]):
+        if bot.active_competition:
+            if bot.active_competition.believe.amount == 0 and bot.active_competition.doubt.amount == 0:
+                await interaction.response.send_message("Ending contest. Nothing to declare a winner on! No bets made")
+                bot.Timer = -1
+                bot.end_time = -1
+                bot.active_competition.clear_competition(mongo_client)
+                bot.active_competition = None
+                return
+            await interaction.response.send_message(language.winning_text(bot.active_competition, winner_type.value))
+            bot.active_competition.declare_winner(mongo_client, winner_type.value)
+            await bot.active_competition.clear_competition(mongo_client)
+            bot.active_competition = None
+            pass
+        else:
+            #TODO: Create a dictionary of strings
+            await interaction.response.send_message("Nothing to declare a winner on! No prediction running.", ephemeral = True)
+    @winner.error
+    async def say_error(interaction: discord.Interaction, error):
+        logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
+        await interaction.response.send_message("Not Allowed!", ephemeral = True)
+    
+    @bot.tree.command()
+    async def check_points(interaction: discord.Interaction):
+        collection = mongo_client.get_guild_points_collection(interaction.guild)
+        data = collection.find_one({"_id" : interaction.user.id })
+
+        await interaction.response.send_message(language.check_points(interaction.user, data["points"]), ephemeral=True)
+
+    @bot.tree.command()
+    async def check_bet(interaction: discord.Interaction):
+        collection = mongo_client.get_guild_betting_pool_collection(interaction.guild)
+        data = collection.find_one({"_id" : interaction.user.id })
+
+        if data:
+            await interaction.response.send_message(language.check_bet(interaction.user, data["points"]), ephemeral=True)
+        else:
+            await interaction.response.send_message("You don't seem to have a bet.", ephemeral=True)
 
     @bot.tree.command()
     @app_commands.check(is_owner)

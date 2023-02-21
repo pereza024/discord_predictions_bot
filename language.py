@@ -2,6 +2,8 @@ import math
 from enum import Enum
 from competition import Competition
 
+import discord
+
 def startText(title: str, believe: str, doubt: str, duration: str):
     text = f"> Prediction Started: **{title}** - Betting submission Time Left: **{duration}**\n" \
            f"```bash\n" \
@@ -15,6 +17,12 @@ class end_text_reasons(Enum):
        BELIEVERS = 1
        DOUBTERS = 2
 
+def check_points(user: discord.User, amount: int):
+       return f"Hey {user.mention}! You seem to have {math.trunc(amount)}."
+
+def check_bet(user: discord.User, amount: int):
+       return f"Hey {user.mention}! You seem to have bet {math.trunc(amount)}. Hopefully you win"
+       
 def endText(title: str, reason: end_text_reasons):
        if reason == end_text_reasons.REFUND:
               text = f"> Prediction Closed: **{title}**\n" \
