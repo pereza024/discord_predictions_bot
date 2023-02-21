@@ -22,7 +22,7 @@ def check_points(user: discord.User, amount: int):
 
 def check_bet(user: discord.User, amount: int):
        return f"Hey {user.mention}! You seem to have bet {math.trunc(amount)}. Hopefully you win"
-
+       
 def endText(title: str, reason: end_text_reasons):
        if reason == end_text_reasons.REFUND:
               text = f"> Prediction Closed: **{title}**\n" \
