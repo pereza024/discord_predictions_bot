@@ -44,11 +44,11 @@ def run():
             for voice_channel in guild.voice_channels:
                 if len(voice_channel.members) > 0:
                     for member in voice_channel.members:
-                        points = random.randint(90, 125)
-                        mongo_client.insert_points_record(guild, member, 0)
+                        points = random.randint(15, 45)
+                        mongo_client.insert_points_record(guild, member, points)
                         logger.info(f"Giving {member.display_name or member.name} (ID: {member.id}) {points} Points for being inside {guild.name}'s voice channels")
         
-        this = Timer(60, check_server_member_status)
+        this = Timer(60 * 15, check_server_member_status)
         this.start()
 
     @bot.event
