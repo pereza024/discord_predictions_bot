@@ -26,6 +26,18 @@ def is_owner(interaction: discord.Interaction):
             return True
     return False
 
+def is_channel(interaction: discord.Interaction):
+    if interaction.guild.id == 184728713731112961:
+        allowed_channel_ids = [
+            1077450054031388804
+        ]
+        for channel_id in allowed_channel_ids:
+            if interaction.channel.id == channel_id:
+                return True
+        return False
+    else:
+        return True
+
 def run():
     #NOTE: Discord Bot Intents
     intents = discord.Intents.default()
@@ -67,7 +79,7 @@ def run():
         mongo_client.register_new_member(member)
 
     @bot.tree.command()
-    @app_commands.check(is_owner)
+    @app_commands.check(is_owner and is_channel)
     async def predict(interaction: discord.Interaction, title: str, duration: int, believe_reason: str = "Yes", doubt_reason: str = "No"):
         if not bot.active_competition:
             bot.active_competition = Competition(title, believe_reason, doubt_reason, interaction.guild)
@@ -88,8 +100,11 @@ def run():
     async def predict_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
+        time.sleep(60)
+        await interaction.delete_original_response()
         
     @bot.tree.command()
+    @app_commands.check(is_channel)
     async def believe(interaction: discord.Interaction, amount: int):
         print(f"{bool(bot.active_competition)} & {bot.Timer}")
         member_points_collection = mongo_client.get_guild_points_collection(interaction.guild)
@@ -116,8 +131,15 @@ def run():
         else:
             #TODO: String Library
             await interaction.response.send_message(f"{interaction.user.mention} the prediction hasn't started! Either start a prediction or ask an admin in the channel to start one.", ephemeral=True)
-    
+    @believe.error
+    async def believe_error(interaction: discord.Interaction, error):
+        logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
+        await interaction.response.send_message("Not Allowed!", ephemeral = True)
+        time.sleep(60)
+        await interaction.delete_original_response()
+        
     @bot.tree.command()
+    @app_commands.check(is_channel)
     async def doubt(interaction: discord.Interaction, amount: int):
         member_points_collection = mongo_client.get_guild_points_collection(interaction.guild)
         member_point_data = member_points_collection.find_one({"_id": interaction.user.id})
@@ -143,9 +165,15 @@ def run():
         else:
             #TODO: String Library
             await interaction.response.send_message(f"{interaction.user.mention} the prediction hasn't started! Either start a prediction or ask an admin in the channel to start one.", ephemeral=True)
-            
+    @doubt.error
+    async def doubt_error(interaction: discord.Interaction, error):
+        logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
+        await interaction.response.send_message("Not Allowed!", ephemeral = True)
+        time.sleep(60)
+        await interaction.delete_original_response()
+
     @bot.tree.command()
-    @app_commands.check(is_owner)
+    @app_commands.check(is_owner and is_channel)
     async def refund(interaction: discord.Interaction, user: discord.User = None):
         if bot.active_competition:
             await interaction.response.send_message(language.endText(bot.active_competition.title, language.end_text_reasons.REFUND), ephemeral = False)
@@ -160,9 +188,11 @@ def run():
     async def refund_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
+        time.sleep(60)
+        await interaction.delete_original_response()
 
     @bot.tree.command()
-    @app_commands.check(is_owner)
+    @app_commands.check(is_owner and is_channel)
     @app_commands.choices(winner_type =[
         Choice(name="Believer", value=0),
         Choice(name="Doubter", value=1)
@@ -185,18 +215,28 @@ def run():
             #TODO: Create a dictionary of strings
             await interaction.response.send_message("Nothing to declare a winner on! No prediction running.", ephemeral = True)
     @winner.error
-    async def say_error(interaction: discord.Interaction, error):
+    async def winner_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
+        time.sleep(60)
+        await interaction.delete_original_response()
     
     @bot.tree.command()
+    @app_commands.check(is_channel)
     async def check_points(interaction: discord.Interaction):
         collection = mongo_client.get_guild_points_collection(interaction.guild)
         data = collection.find_one({"_id" : interaction.user.id })
 
         await interaction.response.send_message(language.check_points(interaction.user, data["points"]), ephemeral=True)
+    @check_points.error
+    async def check_points_error(interaction: discord.Interaction, error):
+        logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
+        await interaction.response.send_message("Not Allowed!", ephemeral = True)
+        time.sleep(60)
+        await interaction.delete_original_response()
 
     @bot.tree.command()
+    @app_commands.check(is_channel)
     async def check_bet(interaction: discord.Interaction):
         collection = mongo_client.get_guild_betting_pool_collection(interaction.guild)
         data = collection.find_one({"_id" : interaction.user.id })
@@ -205,6 +245,12 @@ def run():
             await interaction.response.send_message(language.check_bet(interaction.user, data["points"]), ephemeral=True)
         else:
             await interaction.response.send_message("You don't seem to have a bet.", ephemeral=True)
+    @check_bet.error
+    async def check_bet_error(interaction: discord.Interaction, error):
+        logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
+        await interaction.response.send_message("Not Allowed!", ephemeral = True)
+        time.sleep(60)
+        await interaction.delete_original_response()
 
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 
