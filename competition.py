@@ -1,5 +1,3 @@
-import datetime
-
 from database import Database
 
 import discord
@@ -13,11 +11,8 @@ class Competition_Reason():
         self.users = []
 
 class Competition():
-    def __init__(self, title: str, believe_reason: str, doubt_reason: str, duration: int, guild: discord.guild):
+    def __init__(self, title: str, believe_reason: str, doubt_reason: str, guild: discord.guild):
         self.title: str = title # Title of the Competiton
-
-        self.Timer = duration
-        self.endTime = datetime.datetime.now() + datetime.timedelta(seconds=duration) # Tracker of the time duration of the prediction
         
         self.guild: discord.guild = guild # Associated Discord server calling for the competition
         self.believe: Competition_Reason = Competition_Reason(believe_reason)
