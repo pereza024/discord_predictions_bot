@@ -37,6 +37,13 @@ class Database():
             return self.database[collection_name]
         pass
 
+    def insert_points_record(self, guild: discord.Guild, user: discord.User, amount: int):
+        collection: collection = self.get_guild_points_collection(guild)
+        data = collection.find_one({"_id" : user.id})
+        
+        value = data['points'] + amount
+        collection.replace_one({"_id": user.id}, {"name" : data['name'], "points": value }, True)
+
     def insert_betting_record(self, interaction: discord.Interaction, is_doubter: bool, amount: int):
         collection = self.get_guild_betting_pool_collection(interaction.guild)
 
