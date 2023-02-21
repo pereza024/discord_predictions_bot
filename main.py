@@ -103,6 +103,16 @@ def run():
             #TODO: String Library
             await interaction.response.send_message(f"{interaction.user.mention} the prediction hasn't started! Either start a prediction or ask an admin in the channel to start one.", ephemeral=True)
 
+    @bot.tree.command()
+    async def refund(interaction: discord.Interaction, user: discord.User = None):
+        if bot.active_competition:
+            await interaction.response.send_message(language.endText(bot.active_competition.title, language.end_text_reasons.REFUND), ephemeral = False)
+            bot.active_competition.clear_competition(mongo_client)
+            bot.active_competition = None
+        else:
+            #TODO: Create a dictionary of strings
+            await interaction.response.send_message("Nothing to refund! No prediction running.", ephemeral = True)
+
     @bot.hybrid_command(
         aliases = ['p'],
         help = "This is help",

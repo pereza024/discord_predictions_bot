@@ -4,7 +4,7 @@ from setting import logger
 
 import discord
 
-from pymongo import (MongoClient, database)
+from pymongo import (MongoClient, collection, database)
 
 class Database():
     __DEFAULT_USER_POINTS__ : int = 1000
@@ -25,13 +25,13 @@ class Database():
             # TODO: Error catching
             pass
 
-    def get_guild_points_collection(self, guild: discord.Guild):
+    def get_guild_points_collection(self, guild: discord.Guild) -> collection:
         collection_name = self.__get_collection_name(guild, self.collection_name_types.MEMBER_POINTS)
         if collection_name in self.database.list_collection_names():
             return self.database[collection_name]
         pass
 
-    def get_guild_betting_pool_collection(self, guild: discord.Guild):
+    def get_guild_betting_pool_collection(self, guild: discord.Guild) -> collection:
         collection_name = self.__get_collection_name(guild, self.collection_name_types.BETTING_POOL)
         if collection_name in self.database.list_collection_names():
             return self.database[collection_name]
@@ -65,3 +65,18 @@ class Database():
                 logger.info(f"Finished adding {guild.member_count} users from {guild.name} Discord Server into the {member_points_collection_name}")
             else:
                 pass
+    
+    def clear_records(self, guild: discord.Guild):
+        member_points_collection: collection = self.get_guild_points_collection(guild)
+        member_points_records = member_points_collection.find({})
+
+        betting_pool_collection: collection = self.get_guild_betting_pool_collection(guild)
+        betting_pool_records = betting_pool_collection.find({})
+
+        for betting_pool_record in betting_pool_records:
+            for member_points_record in member_points_records:
+                if betting_pool_record['_id'] == member_points_record['_id']:
+                    print(f"Refunding {member_points_record['name']}: {betting_pool_record['points']} Points")
+                    value = member_points_record['points'] + betting_pool_record['points']
+                    member_points_collection.replace_one({"_id" : member_points_record['_id']}, {"name" : member_points_record['name'], "points" : value}, True)
+                    betting_pool_collection.delete_one({"_id": betting_pool_record['_id']})

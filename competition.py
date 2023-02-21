@@ -32,3 +32,6 @@ class Competition():
             self.believe.users.append({"_id": interaction.user.id, "name": interaction.user.display_name or interaction.user.name })
         
         mongo_client.insert_betting_record(interaction, is_doubter, amount)
+
+    def clear_competition(self, mongo_client: Database):
+        mongo_client.clear_records(self.guild)
