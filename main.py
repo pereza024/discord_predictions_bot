@@ -18,7 +18,7 @@ class Prediction_Bot(commands.Bot):
 
 def is_owner(interaction: discord.Interaction):
     allowed_user_ids = [
-        116977532573581314, 185202327119069184, 158040090566852609
+        116977532573581314, 185202327119069184, 158040090566852609, 152237169551998976
     ]
     
     for user_id in allowed_user_ids:
@@ -59,7 +59,12 @@ def run():
         #Registers the Discord Server into the DB
         mongo_client.register_guilds(bot.guilds)
         logger.info(f"Finished registering guilds")
-        check_server_member_status()
+        # check_server_member_status()
+
+    @bot.event
+    async def on_member_join(member: discord.Member):
+        logger.info(f"Adding in {member.display_name or member.name} (ID: {member.id}) to the {member.guild} collection")
+        mongo_client.register_new_member(member)
 
     @bot.tree.command()
     @app_commands.check(is_owner)

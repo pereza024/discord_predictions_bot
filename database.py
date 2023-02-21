@@ -73,6 +73,10 @@ class Database():
             else:
                 pass
     
+    def register_new_member(self, member: discord.Member):
+        collection = self.get_guild_points_collection(member.guild)
+        collection.insert_one({"_id" : member.id, "name" : member.display_name or member.name, "points" : self.__DEFAULT_USER_POINTS__})
+
     def clear_records(self, guild: discord.Guild, is_refund: bool = False):
         member_points_collection: collection = self.get_guild_points_collection(guild)
         member_points_records = member_points_collection.find({})
