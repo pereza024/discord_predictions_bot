@@ -1,0 +1,250 @@
+{
+    "data" : [
+        {
+            "key" : "bot_login",
+            "content" : [
+                { "lang" : "en", "text" : "Logging in: {user} (ID: {id})"}
+            ]
+        },
+        {
+            "key" : "polling_checker",
+            "content" : [
+                { "lang" : "en", "text" : "Polling for points: {name}"}
+            ]
+        },
+        {
+            "key" : "activity_reward",
+            "content" : [
+                { "lang" : "en", "text" : "Giving {name} (ID: {id}) {points} Points for being inside {guild_name}'s voice channels"}
+            ]
+        },
+        {
+            "key" : "predict_command_description",
+            "content": [
+                { "lang" : "en", "text" : "Starts a prediction for the server. '/help predict' for more help" }
+            ]
+        },
+        {
+            "key" : "predict_title_description",
+            "content": [
+                { "lang" : "en", "text" : "The title of the prediction" }
+            ]
+        },
+        {
+            "key" : "predict_duration_description",
+            "content": [
+                { "lang" : "en", "text" : "The duration of how long the betting process will last. Enter a positive number. Time in seconds" }
+            ]
+        },
+        {
+            "key" : "predict_believe_description",
+            "content": [
+                { "lang" : "en", "text" : "(OPTIONAL) [DEFAULT: YES] - The positive outcome text" }
+            ]
+        },
+        {
+            "key" : "predict_doubt_description",
+            "content": [
+                { "lang" : "en", "text" : "(OPTIONAL) [DEFAULT: NO] - The negative outcome text" }
+            ]
+        },
+        {
+            "key" : "predict_in_progress_description",
+            "content": [
+                { "lang" : "en", "text" : "Prediction currently running. Please finish the prediction with '/winner' or '/refund' the current bets.  " }
+            ]
+        },
+        {
+            "key" : "predict_start",
+            "content": [
+                { "lang" : "en", "text" : "> Prediction Started: **{competition_title}** - Betting submission Time Left: **{duration}**\n```bash\nType /believe (amount) to bet on \"{believe}\"\nType /doubt (amount) to bet on \"{doubt}\"```" }
+            ]
+        },
+        {
+            "key" : "believe_command_description",
+            "content": [
+                { "lang" : "en", "text" : "Command to bet for the positive outcome of a prediction" }
+            ]
+        },
+        {
+            "key" : "doubt_command_description",
+            "content": [
+                { "lang" : "en", "text" : "Command to bet for the negative outcome of a prediction" }
+            ]
+        },
+        {
+            "key" : "betting_amount_description",
+            "content": [
+                { "lang" : "en", "text" : "Amount you wish to bet for. Enter positive values only. Use '/points' to check your server points" }
+            ]
+        },
+        {
+            "key" : "betting_side_error",
+            "content": [
+                { "lang" : "en", "text" : "{mention} you have already chosen your side for this prediction" }
+            ]
+        },
+        {
+            "key" : "betting_amount_error",
+            "content": [
+                { "lang" : "en", "text" : "{mention} you don't have enough points to make that bet" }
+            ]
+        },
+        {
+            "key" : "betting_over_error",
+            "content": [
+                { "lang" : "en", "text" : "{mention} the prediction submission have ended! Waiting on outcome." }
+            ]
+        },
+        {
+            "key" : "betting_prediction_over_error",
+            "content": [
+                { "lang" : "en", "text" : "{mention} the prediction hasn't started! Either start a prediction or ask an admin in the channel to start one." }
+            ]
+        },
+        {
+            "key" : "betting_side_error",
+            "content": [
+                { "lang" : "en", "text" : "{mention} you have already chosen your side for this prediction" }
+            ]
+        },
+        {
+            "key" : "betting_amount_error",
+            "content": [
+                { "lang" : "en", "text" : "{mention} you don't have enough points to make that bet" }
+            ]
+        },
+        {
+            "key" : "betting_over_error",
+            "content": [
+                { "lang" : "en", "text" : "{mention} the submission for the prediction have ended! Waiting on outcome." }
+            ]
+        },
+        {
+            "key" : "betting_prediction_over_error",
+            "content": [
+                { "lang" : "en", "text" : "{mention} the prediction hasn't started! Either start a prediction or ask an admin in the channel to start one." }
+            ]
+        },
+        {
+            "key" : "betting_believe_result",
+            "content": [
+                { "lang" : "en", "text" : "{name} has bet {amount} in favor of \"{title}\"" }
+            ]
+        },
+        {
+            "key" : "betting_doubt_result",
+            "content": [
+                { "lang" : "en", "text" : "{name} has bet {amount} in opposition of \"{title}\"" }
+            ]
+        },
+        {
+            "key" : "refund_command_description",
+            "content": [
+                { "lang" : "en", "text" : "Issues a refund to all users and terminates the contest. Option to issue a refund to one person" }
+            ]
+        },
+        {
+            "key" : "refund_issued",
+            "content": [
+                { "lang" : "en", "text" : "> Prediction Closed: **{title}**\n```bash\nUsers have been refunded their points ```" }
+            ]
+        },
+        {
+            "key" : "refund_prediction_over",
+            "content": [
+                { "lang" : "en", "text" : "Nothing to refund! No prediction running." }
+            ]
+        },
+        {
+            "key" : "winner_command_description",
+            "content": [
+                { "lang" : "en", "text" : "Declares the winner of the prediction. Ask for which side won the prediction" }
+            ]
+        },
+        {
+            "key" : "winner_type_description",
+            "content": [
+                { "lang" : "en", "text" : "Choose between the Believer's side or the Doubter's side to win the prediction" }
+            ]
+        },
+        {
+            "key" : "winning_believers",
+            "content": [
+                { "lang" : "en", "text" : "Prediction Closed: **{title}**\nResults: **{believe_title} - #{believe_amount} ({believe_percent}%)** vs. ({doubt_percent}%) #{doubt_amount} - {doubt_title} \n" }
+            ]
+        },
+        {
+            "key" : "winning_doubters",
+            "content": [
+                { "lang" : "en", "text" : "Prediction Closed: **{title}**\nResults: {believe_title} - #{believe_amount} ({believe_percent}%) vs. **({doubt_percent}%) #{doubt_amount} - {doubt_title}** \n" }
+            ]
+        },
+        {
+            "key" : "winner_empty",
+            "content": [
+                { "lang" : "en", "text" : "Ending contest. Nothing to declare a winner on! No bets made" }
+            ]
+        },
+        {
+            "key" : "winner_prediction_over",
+            "content": [
+                { "lang" : "en", "text" : "Nothing to declare a winner on! No prediction running." }
+            ]
+        },
+        {
+            "key" : "points_command_description",
+            "content": [
+                { "lang" : "en", "text" : "Allows you to check your current point total in the server" }
+            ]
+        },
+        {
+            "key" : "points_result",
+            "content": [
+                { "lang" : "en", "text" : "Hey {mention}! You seem to have {amount}." }
+            ]
+        },
+        {
+            "key" : "check_bet_command_description",
+            "content": [
+                { "lang" : "en", "text" : "Allows you to check your total bet amount" }
+            ]
+        },
+        {
+            "key" : "check_bet_result",
+            "content": [
+                { "lang" : "en", "text" : "Hey {mention}! You seem to have bet {amount}. Hopefully you win" }
+            ]
+        },
+        {
+            "key" : "check_bet_empty",
+            "content": [
+                { "lang" : "en", "text" : "{mention}, you seem to not have placed a bet. '/believe' or '/doubt" }
+            ]
+        },
+        {
+            "key" : "generic_error",
+            "content": [
+                { "lang" : "en", "text" : "Not Allowed!" }
+            ]
+        },
+        {
+            "key" : "logging_betting_positive",
+            "content": [
+                { "lang" : "en", "text" : "Guild: {guild}, User: {name} (ID: {id}) is betting {amount} Points in favour of the prediction" }
+            ]
+        },
+        {
+            "key" : "logging_betting_negative",
+            "content": [
+                { "lang" : "en", "text" : "Guild: {guild}, User: {name} (ID: {id}) is betting {amount} Points against the prediction" }
+            ]
+        },
+        {
+            "key" : "logging_error",
+            "content": [
+                { "lang" : "en", "text" : "For user: {display_name} (ID: {id}) triggered the error:\n {error} \n" }
+            ]
+        }
+    ]
+}
