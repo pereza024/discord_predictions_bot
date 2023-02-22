@@ -188,8 +188,6 @@ def run():
     async def refund_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
-        time.sleep(60)
-        await interaction.delete_original_response()
 
     @bot.tree.command()
     @app_commands.check(is_owner and is_channel)
@@ -208,18 +206,12 @@ def run():
                 return
             await interaction.response.send_message(language.winning_text(bot.active_competition, winner_type.value))
             bot.active_competition.declare_winner(mongo_client, winner_type.value)
-            await bot.active_competition.clear_competition(mongo_client)
+            bot.active_competition.clear_competition(mongo_client)
             bot.active_competition = None
             pass
         else:
             #TODO: Create a dictionary of strings
             await interaction.response.send_message("Nothing to declare a winner on! No prediction running.", ephemeral = True)
-    @winner.error
-    async def winner_error(interaction: discord.Interaction, error):
-        logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
-        await interaction.response.send_message("Not Allowed!", ephemeral = True)
-        time.sleep(60)
-        await interaction.delete_original_response()
     
     @bot.tree.command()
     @app_commands.check(is_channel)
@@ -232,8 +224,6 @@ def run():
     async def check_points_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
-        time.sleep(60)
-        await interaction.delete_original_response()
 
     @bot.tree.command()
     @app_commands.check(is_channel)
@@ -249,8 +239,6 @@ def run():
     async def check_bet_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
-        time.sleep(60)
-        await interaction.delete_original_response()
 
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 

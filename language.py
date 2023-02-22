@@ -41,13 +41,13 @@ def winning_text(competition: Competition, winning_group: int):
        text = ""
        if winning_group == 0:
               text = f"Prediction Closed: **{competition.title}**\n" \
-                     f"Results: **{competition.believe.title} - #{competition.believe.amount} ({math.trunc(competition.believe.amount / competition.believe.amount + competition.doubt.amount * 100)}%)** " \
+                     f"Results: **{competition.believe.title} - #{competition.believe.amount} ({math.trunc(competition.believe.amount / (competition.believe.amount + competition.doubt.amount) * 100)}%)** " \
                      f"vs. ({competition.doubt.amount / (competition.believe.amount + competition.doubt.amount) * 100}%) #{competition.doubt.amount} - {competition.doubt.title} \n" \
                      f"```bash\n" \
                      f"Congrats to all the winner!```"
        if winning_group == 1:
               text = f"Prediction Closed: **{competition.title}**\n" \
-                     f"Results: {competition.believe.title} - #{competition.believe.amount} ({math.trunc(competition.believe.amount / competition.believe.amount + competition.doubt.amount * 100)}%) " \
+                     f"Results: {competition.believe.title} - #{competition.believe.amount} ({math.trunc(competition.believe.amount / (competition.believe.amount + competition.doubt.amount) * 100)}%) " \
                      f"vs. **({competition.doubt.amount / (competition.believe.amount + competition.doubt.amount) * 100}%) #{competition.doubt.amount} - {competition.doubt.title}** \n" \
                      f"```bash\n" \
                      f"Congrats to all the winner!```"
