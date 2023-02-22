@@ -53,9 +53,10 @@ class Competition():
                 user_points_data = member_points_collection.find_one({"_id" : user["_id"]})
                 user_betting_data = betting_pool_collection.find_one({"_id" : user["_id"]})
 
-                user_winning_ratio = user_betting_data["points"] / self.believe.amount
+                user_winning_ratio = user_betting_data["points"] / self.doubt.amount
                 amount = user_winning_ratio * self.believe.amount + user_betting_data['points']
 
+                betting_pool_collection.delete_one({"_id" : user_betting_data['_id']})
                 member_points_collection.replace_one({"_id" : user_points_data['_id']}, {"name" : user_points_data['name'], "points" : user_points_data["points"] + amount}, True)
 
     def clear_competition(self, mongo_client: Database, is_refund: bool = False):

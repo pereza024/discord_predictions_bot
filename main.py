@@ -1,4 +1,5 @@
-import time, datetime
+import time, datetime, random
+from threading import Timer
 
 import setting, language
 from setting import logger
@@ -17,13 +18,25 @@ class Prediction_Bot(commands.Bot):
 
 def is_owner(interaction: discord.Interaction):
     allowed_user_ids = [
-        116977532573581314, 185202327119069184, 158040090566852609
+        116977532573581314, 185202327119069184, 158040090566852609, 152237169551998976
     ]
     
     for user_id in allowed_user_ids:
         if interaction.user.id == user_id:
             return True
     return False
+
+def is_channel(interaction: discord.Interaction):
+    if interaction.guild.id == 184728713731112961:
+        allowed_channel_ids = [
+            1077450054031388804
+        ]
+        for channel_id in allowed_channel_ids:
+            if interaction.channel.id == channel_id:
+                return True
+        return False
+    else:
+        return True
 
 def run():
     #NOTE: Discord Bot Intents
@@ -35,6 +48,21 @@ def run():
     mongo_client = Database(setting.CLUSTER_LINK, setting.DB_NAME)
     bot: Prediction_Bot = Prediction_Bot(command_prefix="$$", intents=intents)
 
+    def check_server_member_status():
+        for guild in bot.guilds:
+            logger.info(f"Polling for points: {guild.name}")
+
+            collection = mongo_client.get_guild_points_collection(guild)
+            for voice_channel in guild.voice_channels:
+                if len(voice_channel.members) > 0:
+                    for member in voice_channel.members:
+                        points = random.randint(15, 45)
+                        mongo_client.insert_points_record(guild, member, points)
+                        logger.info(f"Giving {member.display_name or member.name} (ID: {member.id}) {points} Points for being inside {guild.name}'s voice channels")
+        
+        this = Timer(60 * 15, check_server_member_status)
+        this.start()
+
     @bot.event
     async def on_ready():
         logger.info(f"Logging in: {bot.user} (ID: {bot.user.id})")
@@ -43,9 +71,15 @@ def run():
         #Registers the Discord Server into the DB
         mongo_client.register_guilds(bot.guilds)
         logger.info(f"Finished registering guilds")
+        check_server_member_status()
+
+    @bot.event
+    async def on_member_join(member: discord.Member):
+        logger.info(f"Adding in {member.display_name or member.name} (ID: {member.id}) to the {member.guild} collection")
+        mongo_client.register_new_member(member)
 
     @bot.tree.command()
-    @app_commands.check(is_owner)
+    @app_commands.check(is_owner and is_channel)
     async def predict(interaction: discord.Interaction, title: str, duration: int, believe_reason: str = "Yes", doubt_reason: str = "No"):
         if not bot.active_competition:
             bot.active_competition = Competition(title, believe_reason, doubt_reason, interaction.guild)
@@ -68,6 +102,7 @@ def run():
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
         
     @bot.tree.command()
+    @app_commands.check(is_channel)
     async def believe(interaction: discord.Interaction, amount: int):
         print(f"{bool(bot.active_competition)} & {bot.Timer}")
         member_points_collection = mongo_client.get_guild_points_collection(interaction.guild)
@@ -94,8 +129,15 @@ def run():
         else:
             #TODO: String Library
             await interaction.response.send_message(f"{interaction.user.mention} the prediction hasn't started! Either start a prediction or ask an admin in the channel to start one.", ephemeral=True)
-    
+    @believe.error
+    async def believe_error(interaction: discord.Interaction, error):
+        logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
+        await interaction.response.send_message("Not Allowed!", ephemeral = True)
+        time.sleep(60)
+        await interaction.delete_original_response()
+        
     @bot.tree.command()
+    @app_commands.check(is_channel)
     async def doubt(interaction: discord.Interaction, amount: int):
         member_points_collection = mongo_client.get_guild_points_collection(interaction.guild)
         member_point_data = member_points_collection.find_one({"_id": interaction.user.id})
@@ -123,7 +165,7 @@ def run():
             await interaction.response.send_message(f"{interaction.user.mention} the prediction hasn't started! Either start a prediction or ask an admin in the channel to start one.", ephemeral=True)
             
     @bot.tree.command()
-    @app_commands.check(is_owner)
+    @app_commands.check(is_owner and is_channel)
     async def refund(interaction: discord.Interaction, user: discord.User = None):
         if bot.active_competition:
             await interaction.response.send_message(language.endText(bot.active_competition.title, language.end_text_reasons.REFUND), ephemeral = False)
@@ -140,7 +182,7 @@ def run():
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
 
     @bot.tree.command()
-    @app_commands.check(is_owner)
+    @app_commands.check(is_owner and is_channel)
     @app_commands.choices(winner_type =[
         Choice(name="Believer", value=0),
         Choice(name="Doubter", value=1)
@@ -156,14 +198,22 @@ def run():
                 return
             await interaction.response.send_message(language.winning_text(bot.active_competition, winner_type.value))
             bot.active_competition.declare_winner(mongo_client, winner_type.value)
-            await bot.active_competition.clear_competition(mongo_client)
+            bot.active_competition.clear_competition(mongo_client)
             bot.active_competition = None
             pass
         else:
             #TODO: Create a dictionary of strings
             await interaction.response.send_message("Nothing to declare a winner on! No prediction running.", ephemeral = True)
-    @winner.error
-    async def say_error(interaction: discord.Interaction, error):
+    
+    @bot.tree.command()
+    @app_commands.check(is_channel)
+    async def check_points(interaction: discord.Interaction):
+        collection = mongo_client.get_guild_points_collection(interaction.guild)
+        data = collection.find_one({"_id" : interaction.user.id })
+
+        await interaction.response.send_message(language.check_points(interaction.user, data["points"]), ephemeral=True)
+    @check_points.error
+    async def check_points_error(interaction: discord.Interaction, error):
         logger.error(f"For user: {interaction.user.display_name} (ID: {interaction.user.id}) triggered the error: {error}")
         await interaction.response.send_message("Not Allowed!", ephemeral = True)
     

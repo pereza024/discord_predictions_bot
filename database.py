@@ -37,6 +37,13 @@ class Database():
             return self.database[collection_name]
         pass
 
+    def insert_points_record(self, guild: discord.Guild, user: discord.User, amount: int):
+        collection: collection = self.get_guild_points_collection(guild)
+        data = collection.find_one({"_id" : user.id})
+        
+        value = data['points'] + amount
+        collection.replace_one({"_id": user.id}, {"name" : data['name'], "points": value }, True)
+
     def insert_betting_record(self, interaction: discord.Interaction, is_doubter: bool, amount: int):
         collection = self.get_guild_betting_pool_collection(interaction.guild)
 
@@ -66,14 +73,17 @@ class Database():
             else:
                 pass
     
-    def clear_records(self, guild: discord.Guild, is_refund: bool = False):
-        member_points_collection: collection = self.get_guild_points_collection(guild)
-        member_points_records = member_points_collection.find({})
+    def register_new_member(self, member: discord.Member):
+        collection = self.get_guild_points_collection(member.guild)
+        collection.insert_one({"_id" : member.id, "name" : member.display_name or member.name, "points" : self.__DEFAULT_USER_POINTS__})
 
+    def clear_records(self, guild: discord.Guild, is_refund: bool = False):
         betting_pool_collection: collection = self.get_guild_betting_pool_collection(guild)
         betting_pool_records = betting_pool_collection.find({})
 
         for betting_pool_record in betting_pool_records:
+            member_points_collection: collection = self.get_guild_points_collection(guild)
+            member_points_records = member_points_collection.find({})
             for member_points_record in member_points_records:
                 if betting_pool_record['_id'] == member_points_record['_id']:
                     if is_refund:
