@@ -10,7 +10,6 @@ class end_text_reasons(Enum):
        DOUBTERS = 2
 
 class Language():
-              
        def __init__(self):
               self.data = json.load(open('string_dictionary.json'))
 

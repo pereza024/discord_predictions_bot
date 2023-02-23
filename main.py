@@ -53,8 +53,6 @@ def run():
     def check_server_member_status():
         for guild in bot.guilds:
             logger.info(bot.language_controller.output_string("polling_checker").format(name = guild.name))
-
-            collection = mongo_client.get_guild_points_collection(guild)
             for voice_channel in guild.voice_channels:
                 if len(voice_channel.members) > 0:
                     for member in voice_channel.members:
@@ -79,7 +77,7 @@ def run():
         mongo_client.register_guilds(bot.guilds)
 
         logger.info(f"Finished registering guilds")
-        # check_server_member_status()
+        check_server_member_status()
 
     @bot.event
     async def on_member_join(member: discord.Member):
@@ -217,7 +215,6 @@ def run():
         if bot.active_competition and bot.Timer > -1:
             for user in bot.active_competition.believe.users:
                 if interaction.user.id == user['_id']:
-                    #TODO: String Library
                     await interaction.response.send_message(bot.language_controller.output_string("betting_side_error").format(
                         mention = interaction.user.mention
                     ), ephemeral = True)
