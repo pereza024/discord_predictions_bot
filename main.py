@@ -385,6 +385,29 @@ def run():
                 mention = interaction.user.mention
             ), ephemeral = True)
 
+    @bot.tree.command(
+        name="leaderboard",
+        description=bot.language_controller.output_string("leaderboard_command_description")
+    )
+    async def leaderboard(interaction: discord.Interaction):
+        results: list = mongo_client.get_guild_points_leaderboard(interaction.guild)
+        
+        def get_member_mention(record):
+            logger.info(record)
+            if record:
+                member = interaction.guild.get_member(record["_id"])
+                if member:
+                    return member.mention            
+            return " --- "
+
+        await interaction.response.send_message( \
+            f">{interaction.guild}'s Points Leaderboard \n" \
+            f"```bash\n" \
+            f"1. - {get_member_mention(results[0])}\n" \
+            f"2. - {get_member_mention(results[1])}\n" \
+            f"3. - {get_member_mention(results[2])}\n"
+        )
+    
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 
 if __name__ == "__main__":
