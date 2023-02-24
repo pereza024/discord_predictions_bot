@@ -223,6 +223,12 @@
             ]
         },
         {
+            "key" : "leaderboard_command_description",
+            "content": [
+                { "lang" : "en", "text" : "Show the top 5 Points holders for the server" }
+            ]
+        },
+        {
             "key" : "generic_error",
             "content": [
                 { "lang" : "en", "text" : "Not Allowed!" }

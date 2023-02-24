@@ -56,7 +56,11 @@ def run():
             for voice_channel in guild.voice_channels:
                 if len(voice_channel.members) > 0:
                     for member in voice_channel.members:
-                        points = random.randint(15, 45)
+                        points = 0
+                        if member.voice.deaf or member.voice.self_deaf:
+                            points = random.randint(1 , 5)
+                        else:
+                            points = random.randint(20 , 30)
                         mongo_client.insert_points_record(guild, member, points)
                         logger.info(bot.language_controller.output_string("activity_reward").format(
                             name = member.display_name or member.name,
@@ -77,7 +81,7 @@ def run():
         mongo_client.register_guilds(bot.guilds)
 
         logger.info(f"Finished registering guilds")
-        check_server_member_status()
+        # check_server_member_status()
 
     @bot.event
     async def on_member_join(member: discord.Member):
@@ -385,6 +389,18 @@ def run():
                 mention = interaction.user.mention
             ), ephemeral = True)
 
+    ###
+    ### Discord Bot Command - /leaderboard
+    ### Shows the channel's top 5 points leaders
+    ###  
+    @bot.tree.command(
+        name="leaderboard",
+        description=bot.language_controller.output_string("leaderboard_command_description")
+    )
+    async def leaderboard(interaction: discord.Interaction):
+        results: list = mongo_client.get_guild_points_leaderboard(interaction.guild)
+        await interaction.response.send_message(bot.language_controller.get_leaderboard_text(interaction.guild, results))
+    
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 
 if __name__ == "__main__":

@@ -4,7 +4,9 @@ from setting import logger
 
 import discord
 
+import pymongo
 from pymongo import (MongoClient, collection, database)
+from pymongo.collection import Collection
 
 class Database():
     __DEFAULT_USER_POINTS__ : int = 1000
@@ -25,17 +27,27 @@ class Database():
             # TODO: Error catching
             pass
 
-    def get_guild_points_collection(self, guild: discord.Guild) -> collection:
+    def get_guild_points_collection(self, guild: discord.Guild) -> Collection:
         collection_name = self.__get_collection_name(guild, self.collection_name_types.MEMBER_POINTS)
         if collection_name in self.database.list_collection_names():
             return self.database[collection_name]
         pass
 
-    def get_guild_betting_pool_collection(self, guild: discord.Guild) -> collection:
+    def get_guild_betting_pool_collection(self, guild: discord.Guild) -> Collection:
         collection_name = self.__get_collection_name(guild, self.collection_name_types.BETTING_POOL)
         if collection_name in self.database.list_collection_names():
             return self.database[collection_name]
         pass
+
+    def get_guild_points_leaderboard(self, guild: discord.Guild):
+        points_collection: Collection = self.get_guild_points_collection(guild)
+        leaderboard = []
+        i = 0
+        for record in points_collection.find({}).sort("points", pymongo.DESCENDING):
+            if 5 >= i:
+                leaderboard.append(record)
+                i += 1
+        return leaderboard
 
     def insert_points_record(self, guild: discord.Guild, user: discord.User, amount: int):
         collection: collection = self.get_guild_points_collection(guild)
