@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from database import Database
 from setting import logger
 
@@ -6,15 +8,15 @@ import discord
 from pymongo.collection import Collection
 
 class Competition_Reason():
-    def __init__(self, title: str, amount: int = 0):
+    def __init__(self, title: str):
         self.title: str = title
-        self.amount: int = amount
+        self.amount: int = 0
         self.users = []
 
 class Competition():
     def __init__(self, title: str, believe_reason: str, doubt_reason: str, guild: discord.guild):
         self.title: str = title # Title of the Competiton
-        
+        self.id: int = UUID.int # ID of the competition
         self.guild: discord.Guild = guild # Associated Discord server calling for the competition
         self.believe: Competition_Reason = Competition_Reason(believe_reason)
         self.doubt: Competition_Reason = Competition_Reason(doubt_reason)
