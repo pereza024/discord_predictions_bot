@@ -1,8 +1,9 @@
 from database import Database
+from setting import logger
 
 import discord
 
-from pymongo import collection
+from pymongo.collection import Collection
 
 class Competition_Reason():
     def __init__(self, title: str, amount: int = 0):
@@ -14,7 +15,7 @@ class Competition():
     def __init__(self, title: str, believe_reason: str, doubt_reason: str, guild: discord.guild):
         self.title: str = title # Title of the Competiton
         
-        self.guild: discord.guild = guild # Associated Discord server calling for the competition
+        self.guild: discord.Guild = guild # Associated Discord server calling for the competition
         self.believe: Competition_Reason = Competition_Reason(believe_reason)
         self.doubt: Competition_Reason = Competition_Reason(doubt_reason)
 
@@ -36,25 +37,33 @@ class Competition():
 
         # TODO: Determine winning amount
         amount = 0
-        member_points_collection: collection = mongo_client.get_guild_points_collection(self.guild)
-        betting_pool_collection: collection = mongo_client.get_guild_betting_pool_collection(self.guild)
-        if winning_group == 0:
+        member_points_collection: Collection = mongo_client.get_guild_points_collection(self.guild)
+        betting_pool_collection: Collection = mongo_client.get_guild_betting_pool_collection(self.guild)
+        if winning_group == 1:
             for user in user_believers:
+                discord_member = self.guild.get_member(user["_id"])
+
                 user_points_data = member_points_collection.find_one({"_id" : user["_id"]})
                 user_betting_data = betting_pool_collection.find_one({"_id" : user["_id"]})
 
                 user_winning_ratio = user_betting_data["points"] / self.believe.amount
-                amount = user_winning_ratio * self.doubt.amount + user_betting_data['points']
+                amount = round(user_winning_ratio * self.doubt.amount + user_betting_data['points'])
                 
+                logger.info(f"User: {discord_member.display_name or discord_member.name} (ID: {discord_member.id}) \n Has won {amount}\n Prediction: {self.title}")
+
                 betting_pool_collection.delete_one({"_id" : user_betting_data['_id']})
                 member_points_collection.replace_one({"_id" : user_points_data['_id']}, {"name" : user_points_data['name'], "points" : user_points_data["points"] + amount}, True)
-        elif winning_group == 1:
+        elif winning_group == 2:
             for user in user_doubter:
+                discord_member = self.guild.get_member(user["_id"])
+
                 user_points_data = member_points_collection.find_one({"_id" : user["_id"]})
                 user_betting_data = betting_pool_collection.find_one({"_id" : user["_id"]})
 
                 user_winning_ratio = user_betting_data["points"] / self.doubt.amount
-                amount = user_winning_ratio * self.believe.amount + user_betting_data['points']
+                amount = round(user_winning_ratio * self.believe.amount + user_betting_data['points'])
+
+                logger.info(f"User: {discord_member.display_name or discord_member.name} (ID: {discord_member.id}) \n Has won {amount}\n Prediction: {self.title}")
 
                 betting_pool_collection.delete_one({"_id" : user_betting_data['_id']})
                 member_points_collection.replace_one({"_id" : user_points_data['_id']}, {"name" : user_points_data['name'], "points" : user_points_data["points"] + amount}, True)
