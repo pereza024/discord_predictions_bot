@@ -1,6 +1,7 @@
 import math, json
 from enum import Enum
 from competition import Competition
+from setting import logger
 
 import discord
 
@@ -45,3 +46,14 @@ class Language():
                             doubt_amount = competition.doubt.amount,
                             doubt_percent = round(competition.doubt.amount / (competition.believe.amount + competition.doubt.amount) * 100)
                      )
+       
+       def get_leaderboard_text(self, guild: discord.Guild, results: list) -> str:
+              text = f"> **{guild.name}'s Points Leaderboard** \n"
+
+              for record in results:
+                     member = guild.get_member(record["_id"])
+                     if member:
+                            text += f"{results.index(record) + 1}. - { member.mention } \n"
+                     else:
+                            text += f"{results.index(record) + 1}. - ---INVALID or KICKED USER---"
+              return text

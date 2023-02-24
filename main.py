@@ -57,7 +57,6 @@ def run():
                 if len(voice_channel.members) > 0:
                     for member in voice_channel.members:
                         points = 0
-                        logger.info(f"member: {member.name} is deaf: {member.voice.deaf}")
                         if member.voice.deaf or member.voice.self_deaf:
                             points = random.randint(1 , 5)
                         else:
@@ -82,7 +81,7 @@ def run():
         mongo_client.register_guilds(bot.guilds)
 
         logger.info(f"Finished registering guilds")
-        check_server_member_status()
+        # check_server_member_status()
 
     @bot.event
     async def on_member_join(member: discord.Member):
@@ -390,28 +389,17 @@ def run():
                 mention = interaction.user.mention
             ), ephemeral = True)
 
+    ###
+    ### Discord Bot Command - /leaderboard
+    ### Shows the channel's top 5 points leaders
+    ###  
     @bot.tree.command(
         name="leaderboard",
         description=bot.language_controller.output_string("leaderboard_command_description")
     )
     async def leaderboard(interaction: discord.Interaction):
         results: list = mongo_client.get_guild_points_leaderboard(interaction.guild)
-        
-        def get_member_mention(record):
-            logger.info(record)
-            if record:
-                member = interaction.guild.get_member(record["_id"])
-                if member:
-                    return member            
-            return " --- "
-
-        await interaction.response.send_message( \
-            f"> **{interaction.guild}'s Points Leaderboard** \n" \
-            f"\n" \
-            f"1. - {get_member_mention(results[0]).mention}\n" \
-            f"2. - {get_member_mention(results[1]).mention}\n" \
-            f"3. - {get_member_mention(results[2]).mention}\n```"
-        )
+        await interaction.response.send_message(bot.language_controller.get_leaderboard_text(interaction.guild, results))
     
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 
