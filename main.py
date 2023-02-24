@@ -56,7 +56,12 @@ def run():
             for voice_channel in guild.voice_channels:
                 if len(voice_channel.members) > 0:
                     for member in voice_channel.members:
-                        points = random.randint(15, 45)
+                        points = 0
+                        logger.info(f"member: {member.name} is deaf: {member.voice.deaf}")
+                        if member.voice.deaf or member.voice.self_deaf:
+                            points = random.randint(1 , 5)
+                        else:
+                            points = random.randint(20 , 30)
                         mongo_client.insert_points_record(guild, member, points)
                         logger.info(bot.language_controller.output_string("activity_reward").format(
                             name = member.display_name or member.name,
@@ -397,15 +402,15 @@ def run():
             if record:
                 member = interaction.guild.get_member(record["_id"])
                 if member:
-                    return member.mention            
+                    return member            
             return " --- "
 
         await interaction.response.send_message( \
-            f">{interaction.guild}'s Points Leaderboard \n" \
-            f"```bash\n" \
-            f"1. - {get_member_mention(results[0])}\n" \
-            f"2. - {get_member_mention(results[1])}\n" \
-            f"3. - {get_member_mention(results[2])}\n"
+            f"> **{interaction.guild}'s Points Leaderboard** \n" \
+            f"\n" \
+            f"1. - {get_member_mention(results[0]).mention}\n" \
+            f"2. - {get_member_mention(results[1]).mention}\n" \
+            f"3. - {get_member_mention(results[2]).mention}\n```"
         )
     
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
