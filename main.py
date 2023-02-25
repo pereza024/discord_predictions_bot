@@ -101,49 +101,51 @@ def run():
     ###
     @app_commands.check(is_owner and is_channel)
     @app_commands.describe(
-        title = bot.language_controller.output_string("predict_title_description"),
-        duration = bot.language_controller.output_string("predict_duration_description"),
-        believe_reason = bot.language_controller.output_string("predict_believe_description"),
-        doubt_reason = bot.language_controller.output_string("predict_doubt_description")
+        title = Language().output_string("predict_title_description"),
+        duration = Language().output_string("predict_duration_description"),
+        believe_reason = Language().output_string("predict_believe_description"),
+        doubt_reason = Language().output_string("predict_doubt_description"),
+        is_anonymous = Language().output_string("predict_is_anonymous_description"),
+        bet_minimum = Language().output_string("predict_bet_minimum_description")
     )
     @bot.tree.command(
         name="predict",
         description=bot.language_controller.output_string("predict_command_description"),
     )
-    async def predict(interaction: discord.Interaction, title: str, duration: int, believe_reason: str = "Yes", doubt_reason: str = "No"):
+    async def predict(
+        interaction: discord.Interaction,
+        title: str,
+        duration: int,
+        believe_reason: str = "Yes",
+        doubt_reason: str = "No",
+        is_anonymous: bool = False,
+        bet_minimum: int = 1
+    ):
         if not bot.active_competition:
-            bot.active_competition = Competition(title, believe_reason, doubt_reason, interaction.guild)
-            bot.Timer = duration
-            bot.end_time = datetime.datetime.now() + datetime.timedelta(seconds=duration) # Tracker of the time duration of the prediction
-            minutes, seconds = divmod(duration, 60)
-            await interaction.response.send_message(bot.language_controller.output_string("predict_start").format(
-                competition_title = bot.active_competition.title,
-                believe = bot.active_competition.believe.title,
-                doubt = bot.active_competition.doubt.title,
-                duration = bot.active_competition.format_time(minutes, seconds)
-            ))
-
-            while bot.active_competition and bot.Timer >= 0:
-                time.sleep(1)
-                minutes, seconds = divmod(bot.Timer, 60)
-                bot.Timer -= 1
-                await interaction.edit_original_response(content = bot.language_controller.output_string("predict_start").format(
-                    competition_title = bot.active_competition.title,
-                    believe = bot.active_competition.believe.title,
-                    doubt = bot.active_competition.doubt.title,
-                    duration = bot.active_competition.format_time(minutes, seconds)
-                ))
+            for guild in bot.guilds_instances:
+                if interaction.guild == guild.discord_reference:
+                    await interaction.response.send_message(
+                        content = guild.start_competition(title, duration, believe_reason, doubt_reason, is_anonymous, bet_minimum),
+                        ephemeral = False
+                    )
+                else:
+                    raise ValueError()
+                
+            while guild.active_competition and guild.active_competition.timer >= 0:
+                await interaction.edit_original_response(
+                    content = guild.check_if_betting_session_open()
+                )
         else:
-            await interaction.response.send_message(bot.language_controller.output_string("predict_in_progress_description"), ephemeral = True)
+            await interaction.response.send_message(Language().output_string("predict_in_progress_description"), ephemeral = True)
     @predict.error
     async def predict_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
-        logger.error(bot.language_controller.output_string("logging_error").format(
+        logger.error(Language().output_string("logging_error").format(
             display_name = interaction.user.display_name,
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(Language().output_string("generic_error"), ephemeral = True)
 
     ###
     ### Discord Bot Command - /believe

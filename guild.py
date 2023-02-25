@@ -1,9 +1,12 @@
+import datetime, time
+
+from setting import logger
+from language import Language
 from competition import Competition
 
 import discord
 
 import pymongo
-from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.collection import Collection
 
@@ -46,3 +49,49 @@ class Guild():
             record = self.user_points_collection.find({"_id" : member.id})
             if not record: 
                 self.__create_points_record(member)
+
+    def start_competition(self, title: str, duration: int, believe_reason: str, doubt_reason: str, is_anonymous: bool, bet_minimum: int) -> str:
+        self.active_competition: Competition = Competition(title, believe_reason, doubt_reason, self.discord_reference, is_anonymous, bet_minimum)
+        logger.info(f"Creating a new competition: \n  Title: {self.active_competition.title}\n  Guild: {self.discord_reference}\n  Is_Anonymous: {self.active_competition.is_anonymous}\n  Bet_Minimum: {self.active_competition.bet_minimum}")
+
+        self.active_competition.timer = duration
+        self.active_competition.end_time = datetime.datetime.now() + datetime.timedelta(seconds=duration)
+        minutes, seconds = divmod(duration, 60)
+
+        anon_text = ""
+        if self.active_competition.is_anonymous:
+            anon_text = "Enabled"
+        else:
+            anon_text = "Disabled"
+
+        return Language().output_string("predict_start").format(
+            competition_title = self.active_competition.title,
+            believe = self.active_competition.believe.title,
+            doubt = self.active_competition.doubt.title,
+            duration = self.active_competition.format_time(minutes, seconds),
+            anonymous = anon_text,
+            bet_min = self.active_competition.bet_minimum
+        )
+
+    def check_if_betting_session_open(self):
+        if not self.active_competition:
+            raise RuntimeError
+
+        minutes, seconds = divmod(self.active_competition.timer, 60)
+        self.active_competition.timer -= 1
+        time.sleep(1)
+
+        anon_text = ""
+        if self.active_competition.is_anonymous:
+            anon_text = "Enabled"
+        else:
+            anon_text = "Disabled"
+
+        return Language().output_string("predict_start").format(
+            competition_title = self.active_competition.title,
+            believe = self.active_competition.believe.title,
+            doubt = self.active_competition.doubt.title,
+            duration = self.active_competition.format_time(minutes, seconds),
+            anonymous = anon_text,
+            bet_min = self.active_competition.bet_minimum
+        )

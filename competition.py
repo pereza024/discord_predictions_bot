@@ -14,12 +14,16 @@ class Competition_Reason():
         self.users = []
 
 class Competition():
-    def __init__(self, title: str, believe_reason: str, doubt_reason: str, guild: discord.guild):
+    def __init__(self, title: str, believe_reason: str, doubt_reason: str, guild: discord.guild, is_anonymous: bool, bet_minimum: int):
         self.title: str = title # Title of the Competiton
         self.id: int = UUID.int # ID of the competition
         self.guild: discord.Guild = guild # Associated Discord server calling for the competition
+        self.timer: int = -1
+        self.end_time: int = -1
         self.believe: Competition_Reason = Competition_Reason(believe_reason)
         self.doubt: Competition_Reason = Competition_Reason(doubt_reason)
+        self.is_anonymous: bool = is_anonymous
+        self.bet_minimum: int = bet_minimum
 
     def format_time(self, minutes: int, seconds: int):
         return '{:02d}:{:02d}'.format(minutes, seconds)

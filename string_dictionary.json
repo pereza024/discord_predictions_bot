@@ -49,6 +49,18 @@
             ]
         },
         {
+            "key" : "predict_is_anonymous_description",
+            "content": [
+                { "lang" : "en", "text" : "(OPTIONAL) [DEFAULT: NO] - Allows the betting of others to be hidden from the other users" }
+            ]
+        },
+        {
+            "key" : "predict_bet_minimum_description",
+            "content": [
+                { "lang" : "en", "text" : "(OPTIONAL) [DEFAULT: 0] - Makes each bet have to be of a minimum value" }
+            ]
+        },
+        {
             "key" : "predict_in_progress_description",
             "content": [
                 { "lang" : "en", "text" : "Prediction currently running. Please finish the prediction with '/winner' or '/refund' the current bets.  " }
@@ -57,7 +69,7 @@
         {
             "key" : "predict_start",
             "content": [
-                { "lang" : "en", "text" : "> Prediction Started: **{competition_title}** - Betting submission Time Left: **{duration}**\n```bash\nType /believe (amount) to bet on \"{believe}\"\nType /doubt (amount) to bet on \"{doubt}\"```" }
+                { "lang" : "en", "text" : "> Prediction Started: **{competition_title}** - Betting submission Time Left: **{duration}**\n*Anonymous Betting: {anonymous} | Betting Minimum: {bet_min}* \n```bash\nType /believe (amount) to bet on \"{believe}\"\nType /doubt (amount) to bet on \"{doubt}\"```" }
             ]
         },
         {
