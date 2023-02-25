@@ -6,13 +6,17 @@ from language import Language
 from setting import logger
 from competition import Competition
 from database import Database
+from guild import Guild
 
 import discord
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import (commands)
 
+from pymongo import MongoClient
+
 class Prediction_Bot(commands.Bot):
+    guilds_instances: list[Guild] = []
     Timer: int = -1
     end_time: int = -1
     active_competition: Competition = None
@@ -76,11 +80,14 @@ def run():
     async def on_ready():
         logger.info(bot.language_controller.output_string("bot_login").format(user = bot.user, id = bot.user.id))
         await bot.tree.sync()
-
-        # Registers the Discord Server into the DB
-        mongo_client.register_guilds(bot.guilds)
-
+        
+        # Registers the Discord Servers into the DB
+        for guild in bot.guilds:
+            logger.info(f"Attempting to initialize an instance of the Guild() class for {guild.name}")
+            bot.guilds_instances.append(Guild(guild, MongoClient(setting.CLUSTER_LINK)))
         logger.info(f"Finished registering guilds")
+
+        # Scan for active users and give them points
         # check_server_member_status()
 
     @bot.event

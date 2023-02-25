@@ -7,18 +7,42 @@ from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.collection import Collection
 
-__user_points__ = "'User Points"
+__user_points__ = "User Points"
 __competition_history__ = "Competitions"
 
 class Guild():
+    __DEFAULT_USER_POINTS__ : int = 1000
+
     def __fetch_collection__(self, collection_type: str, database_client: pymongo.MongoClient) -> Collection:
-        database: Database = database_client.get_database(self.discord_reference)
-        if not database:
-            database = database_client[self.discord_reference]
+        database: Database = database_client.get_database(f"Guild_ID:{self.discord_reference.id}")
+        if database == None:
+            database = database_client[f"{self.discord_reference.id}"]
+
+        for name in database.list_collection_names():
+            if name == collection_type:
+                return database.get_collection(collection_type)
+
         return database.create_collection(collection_type)
+
+    def __create_points_record(self, member: discord.Member):
+        self.user_points_collection.insert_one({
+            "_id" : member.id, "name" : member.name,
+            "display_name" : member.display_name,
+            "points" : self.__DEFAULT_USER_POINTS__,
+            "wins" : {
+                "total" : 0,
+                "largest_win" : 0,
+                "number_of" : 0
+            }
+        })
     
     def __init__(self, discord_instance: discord.Guild, database_client: pymongo.MongoClient):
         self.discord_reference = discord_instance
-        self.user_points_collection: Collection = self.__fetch_collection__(__competition_history__, database_client)
+        self.user_points_collection: Collection = self.__fetch_collection__(__user_points__, database_client)
         self.competition_history_collection: Collection = self.__fetch_collection__(__competition_history__, database_client)
         self.active_competition: Competition = None
+        
+        for member in discord_instance.members:
+            record = self.user_points_collection.find({"_id" : member.id})
+            if not record: 
+                self.__create_points_record(member)
