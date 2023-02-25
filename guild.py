@@ -54,6 +54,14 @@ class Guild():
         self.active_competition: Competition = Competition(title, believe_reason, doubt_reason, self.discord_reference, is_anonymous, bet_minimum)
         logger.info(f"Creating a new competition: \n  Title: {self.active_competition.title}\n  Guild: {self.discord_reference}\n  Is_Anonymous: {self.active_competition.is_anonymous}\n  Bet_Minimum: {self.active_competition.bet_minimum}")
 
+        self.competition_history_collection.insert_one({
+            "_id" : self.active_competition.id,
+            "believers" : [],
+            "doubters" : [],
+            "is_active" : True
+        })
+
+        # SECTION: Text Formatting for return
         self.active_competition.timer = duration
         self.active_competition.end_time = datetime.datetime.now() + datetime.timedelta(seconds=duration)
         minutes, seconds = divmod(duration, 60)
