@@ -27,7 +27,7 @@ class Guild():
 
         return database.create_collection(collection_type)
 
-    def __create_points_record(self, member: discord.Member):
+    def __create_points_record__(self, member: discord.Member):
         self.user_points_collection.insert_one({
             "_id" : member.id, "name" : member.name,
             "display_name" : member.display_name,
@@ -39,6 +39,19 @@ class Guild():
             }
         })
     
+    def __lookup_active_competition__(self):
+        record = self.competition_history_collection.find_one({"is_active": True})
+        logger.info(record)
+        if record:
+            self.active_competition = Competition(record["title"], record["believe"]["title"], record["doubt"]["title"], self.discord_reference, record["is_anonymous"], record["bet_minimum"])
+            self.active_competition.id = record["_id"]
+            
+            self.active_competition.believe.amount = record["believe"]["total_amount"]
+            self.active_competition.believe.users = record["believe"]["users"]
+            
+            self.active_competition.doubt.amount = record["doubt"]["total_amount"]
+            self.active_competition.doubt.users = record["doubt"]["users"]
+
     def __init__(self, discord_instance: discord.Guild, database_client: pymongo.MongoClient):
         self.discord_reference = discord_instance
         self.user_points_collection: Collection = self.__fetch_collection__(__user_points__, database_client)
@@ -48,17 +61,28 @@ class Guild():
         for member in discord_instance.members:
             record = self.user_points_collection.find({"_id" : member.id})
             if not record: 
-                self.__create_points_record(member)
+                self.__create_points_record__(member)
 
     def start_competition(self, title: str, duration: int, believe_reason: str, doubt_reason: str, is_anonymous: bool, bet_minimum: int) -> str:
         self.active_competition: Competition = Competition(title, believe_reason, doubt_reason, self.discord_reference, is_anonymous, bet_minimum)
-        logger.info(f"Creating a new competition: \n  Title: {self.active_competition.title}\n  Guild: {self.discord_reference}\n  Is_Anonymous: {self.active_competition.is_anonymous}\n  Bet_Minimum: {self.active_competition.bet_minimum}")
+        logger.info(f"Creating a new competition: \n  ID: {self.active_competition.id}\n  Title: {self.active_competition.title}\n  Guild: {self.discord_reference}\n  Is_Anonymous: {self.active_competition.is_anonymous}\n  Bet_Minimum: {self.active_competition.bet_minimum}")
 
         self.competition_history_collection.insert_one({
             "_id" : self.active_competition.id,
-            "believers" : [],
-            "doubters" : [],
-            "is_active" : True
+            "title" : self.active_competition.title,
+            "believe" : {
+                "title": self.active_competition.believe.title,
+                "users": self.active_competition.believe.users,
+                "total_amount": self.active_competition.believe.amount
+            },
+            "doubt" : {
+                "title": self.active_competition.doubt.title,
+                "users": self.active_competition.doubt.users,
+                "total_amount": self.active_competition.doubt.amount
+            },
+            "is_active" : True,
+            "is_anonymous" : self.active_competition.is_anonymous,
+            "bet_minimum": self.active_competition.bet_minimum
         })
 
         # SECTION: Text Formatting for return

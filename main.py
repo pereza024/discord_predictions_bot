@@ -16,7 +16,7 @@ from discord.ext import (commands)
 from pymongo import MongoClient
 
 class Prediction_Bot(commands.Bot):
-    guilds_instances: list[Guild] = []
+    guilds_instances: dict[int : Guild] = {}
     Timer: int = -1
     end_time: int = -1
     active_competition: Competition = None
@@ -84,9 +84,13 @@ def run():
         # Registers the Discord Servers into the DB
         for guild in bot.guilds:
             logger.info(f"Attempting to initialize an instance of the Guild() class for {guild.name}")
-            bot.guilds_instances.append(Guild(guild, MongoClient(setting.CLUSTER_LINK)))
+            bot.guilds_instances[guild.id] = Guild(guild, MongoClient(setting.CLUSTER_LINK))
+            
+            # Look and recreate active predictions
+            guild_instance: Guild = bot.guilds_instances.get(guild.id)
+            guild_instance.__lookup_active_competition__()
         logger.info(f"Finished registering guilds")
-
+        
         # Scan for active users and give them points
         # check_server_member_status()
 
@@ -121,20 +125,12 @@ def run():
         is_anonymous: bool = False,
         bet_minimum: int = 1
     ):
-        if not bot.active_competition:
-            for guild in bot.guilds_instances:
-                if interaction.guild == guild.discord_reference:
-                    await interaction.response.send_message(
-                        content = guild.start_competition(title, duration, believe_reason, doubt_reason, is_anonymous, bet_minimum),
-                        ephemeral = False
-                    )
-                else:
-                    raise ValueError()
+        guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
+        if not guild_instance.active_competition:
+            await interaction.response.send_message(content = guild_instance.start_competition(title, duration, believe_reason, doubt_reason, is_anonymous, bet_minimum),ephemeral = False)
                 
-            while guild.active_competition and guild.active_competition.timer >= 0:
-                await interaction.edit_original_response(
-                    content = guild.check_if_betting_session_open()
-                )
+            while guild_instance.active_competition and guild_instance.active_competition.timer >= 0:
+                await interaction.edit_original_response(content = guild_instance.check_if_betting_session_open())
         else:
             await interaction.response.send_message(Language().output_string("predict_in_progress_description"), ephemeral = True)
     @predict.error

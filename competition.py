@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import uuid1
 
 from database import Database
 from setting import logger
@@ -16,7 +16,7 @@ class Competition_Reason():
 class Competition():
     def __init__(self, title: str, believe_reason: str, doubt_reason: str, guild: discord.guild, is_anonymous: bool, bet_minimum: int):
         self.title: str = title # Title of the Competiton
-        self.id: int = UUID.int # ID of the competition
+        self.id: int = 1 # (int.from_bytes(uuid1().bytes, byteorder='big', signed=False) >> 64) * -1 # ID of the competition
         self.guild: discord.Guild = guild # Associated Discord server calling for the competition
         self.timer: int = -1
         self.end_time: int = -1
