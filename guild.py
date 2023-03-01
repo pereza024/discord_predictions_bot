@@ -1,7 +1,7 @@
 import datetime, time
 
 from setting import logger
-from language import Language
+import language
 from competition import Competition
 
 import discord
@@ -41,7 +41,6 @@ class Guild():
     
     def __lookup_active_competition__(self):
         record = self.competition_history_collection.find_one({"is_active": True})
-        logger.info(record)
         if record:
             self.active_competition = Competition(record["title"], record["believe"]["title"], record["doubt"]["title"], self.discord_reference, record["is_anonymous"], record["bet_minimum"])
             self.active_competition.id = record["_id"]
@@ -96,7 +95,7 @@ class Guild():
         else:
             anon_text = "Disabled"
 
-        return Language().output_string("predict_start").format(
+        return language.Language().output_string("predict_start").format(
             competition_title = self.active_competition.title,
             believe = self.active_competition.believe.title,
             doubt = self.active_competition.doubt.title,
@@ -104,6 +103,35 @@ class Guild():
             anonymous = anon_text,
             bet_min = self.active_competition.bet_minimum
         )
+
+    async def end_competition(self, interaction: discord.Interaction, winner_type_value):
+        text_controller = language.Language()
+        if self.active_competition.believe.amount == 0 and self.active_competition.doubt.amount == 0:
+            # Resets the clocks to stop the while loop from having to keep executing
+            self.active_competition.timer = -1
+            self.active_competition.end_time = -1
+
+            # Update DB to no longer track and declare the competition inactive
+            self.active_competition.clear_competition()
+            self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {"is_active" : False}})
+
+            await interaction.response.send_message(text_controller.output_string("winner_empty"))
+            return
+        
+        # Send correct winner text to client
+        if winner_type_value == language.end_text_reasons.BELIEVERS.value:
+            await interaction.response.send_message(text_controller.get_prediction_end(self.active_competition, language.end_text_reasons.BELIEVERS))
+        elif winner_type_value == language.end_text_reasons.DOUBTERS.value:
+            await interaction.response.send_message(text_controller.get_prediction_end(self.active_competition, language.end_text_reasons.DOUBTERS))
+        else:
+            raise ValueError
+        
+        # Call Competition's helper functions to distribute the winnings of the competition
+        self.active_competition.declare_winner(... , winner_type_value)
+        
+        # Empty the betting Pool
+        self.active_competition.clear_competition()
+        self.active_competition = None
 
     def check_if_betting_session_open(self):
         if not self.active_competition:
@@ -119,7 +147,7 @@ class Guild():
         else:
             anon_text = "Disabled"
 
-        return Language().output_string("predict_start").format(
+        return language.Language().output_string("predict_start").format(
             competition_title = self.active_competition.title,
             believe = self.active_competition.believe.title,
             doubt = self.active_competition.doubt.title,

@@ -77,10 +77,9 @@ def run():
         this.start()
 
     @bot.event
-    async def on_ready():
-        logger.info(bot.language_controller.output_string("bot_login").format(user = bot.user, id = bot.user.id))
-        await bot.tree.sync()
-        
+    async def on_connect():
+        logger.info("Bot connected to client")
+
         # Registers the Discord Servers into the DB
         for guild in bot.guilds:
             logger.info(f"Attempting to initialize an instance of the Guild() class for {guild.name}")
@@ -90,6 +89,11 @@ def run():
             guild_instance: Guild = bot.guilds_instances.get(guild.id)
             guild_instance.__lookup_active_competition__()
         logger.info(f"Finished registering guilds")
+        
+    @bot.event
+    async def on_ready():
+        logger.info(bot.language_controller.output_string("bot_login").format(user = bot.user, id = bot.user.id))
+        await bot.tree.sync()
         
         # Scan for active users and give them points
         # check_server_member_status()
@@ -125,14 +129,17 @@ def run():
         is_anonymous: bool = False,
         bet_minimum: int = 1
     ):
-        guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
-        if not guild_instance.active_competition:
-            await interaction.response.send_message(content = guild_instance.start_competition(title, duration, believe_reason, doubt_reason, is_anonymous, bet_minimum),ephemeral = False)
-                
-            while guild_instance.active_competition and guild_instance.active_competition.timer >= 0:
-                await interaction.edit_original_response(content = guild_instance.check_if_betting_session_open())
+        if bot.is_ready():
+            guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
+            if not guild_instance.active_competition:
+                await interaction.response.send_message(content = guild_instance.start_competition(title, duration, believe_reason, doubt_reason, is_anonymous, bet_minimum),ephemeral = False)
+                    
+                while guild_instance.active_competition and guild_instance.active_competition.timer >= 0:
+                    await interaction.edit_original_response(content = guild_instance.check_if_betting_session_open())
+            else:
+                await interaction.response.send_message(Language().output_string("predict_in_progress_description"), ephemeral = True)
         else:
-            await interaction.response.send_message(Language().output_string("predict_in_progress_description"), ephemeral = True)
+            await interaction.response.send_message("Error: Bot is not ready", ephemeral=True)
     @predict.error
     async def predict_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
@@ -313,25 +320,9 @@ def run():
         Choice(name="Doubter", value=2)
     ])
     async def winner(interaction: discord.Interaction, winner_type: discord.app_commands.Choice[int]):
-        if bot.active_competition:
-            if bot.active_competition.believe.amount == 0 and bot.active_competition.doubt.amount == 0:
-                await interaction.response.send_message(bot.language_controller.output_string("winner_empty"))
-                bot.Timer = -1
-                bot.end_time = -1
-                bot.active_competition.clear_competition(mongo_client)
-                bot.active_competition = None
-                return
-            if winner_type.value == language.end_text_reasons.BELIEVERS.value:
-                await interaction.response.send_message(bot.language_controller.get_prediction_end(bot.active_competition, language.end_text_reasons.BELIEVERS))
-            elif winner_type.value == language.end_text_reasons.DOUBTERS.value:
-                await interaction.response.send_message(bot.language_controller.get_prediction_end(bot.active_competition, language.end_text_reasons.DOUBTERS))
-            else:
-                raise ValueError()
-                
-            bot.active_competition.declare_winner(mongo_client, winner_type.value)
-            bot.active_competition.clear_competition(mongo_client)
-            bot.active_competition = None
-            pass
+        guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
+        if guild_instance.active_competition:
+            await guild_instance.end_competition(interaction, winner_type.value)
         else:
             await interaction.response.send_message(bot.language_controller.output_string("winner_prediction_over"), ephemeral = True)
     @winner.error
