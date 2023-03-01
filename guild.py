@@ -12,6 +12,7 @@ from pymongo.collection import Collection
 
 __user_points__ = "User Points"
 __competition_history__ = "Competitions"
+__betting_pool__ = "Betting Pool"
 
 class Guild():
     __DEFAULT_USER_POINTS__ : int = 1000
@@ -19,7 +20,7 @@ class Guild():
     def __fetch_collection__(self, collection_type: str, database_client: pymongo.MongoClient) -> Collection:
         database: Database = database_client.get_database(f"Guild_ID:{self.discord_reference.id}")
         if database == None:
-            database = database_client[f"{self.discord_reference.id}"]
+            database = database_client[f"{self.id}"]
 
         for name in database.list_collection_names():
             if name == collection_type:
@@ -42,7 +43,7 @@ class Guild():
     def __lookup_active_competition__(self):
         record = self.competition_history_collection.find_one({"is_active": True})
         if record:
-            self.active_competition = Competition(record["title"], record["believe"]["title"], record["doubt"]["title"], self.discord_reference, record["is_anonymous"], record["bet_minimum"])
+            self.active_competition = Competition(record["title"], record["believe"]["title"], record["doubt"]["title"], self, record["is_anonymous"], record["bet_minimum"])
             self.active_competition.id = record["_id"]
             
             self.active_competition.believe.amount = record["believe"]["total_amount"]
@@ -51,20 +52,21 @@ class Guild():
             self.active_competition.doubt.amount = record["doubt"]["total_amount"]
             self.active_competition.doubt.users = record["doubt"]["users"]
 
-    def __init__(self, discord_instance: discord.Guild, database_client: pymongo.MongoClient):
-        self.discord_reference = discord_instance
+    def __init__(self, discord_reference: discord.Guild, database_client: pymongo.MongoClient):
+        self.discord_reference: discord.Guild =  discord_reference
         self.user_points_collection: Collection = self.__fetch_collection__(__user_points__, database_client)
         self.competition_history_collection: Collection = self.__fetch_collection__(__competition_history__, database_client)
+        self.betting_record_collection: Collection = self.__fetch_collection__(__betting_pool__, database_client)
         self.active_competition: Competition = None
         
-        for member in discord_instance.members:
+        for member in self.discord_reference.members:
             record = self.user_points_collection.find({"_id" : member.id})
             if not record: 
                 self.__create_points_record__(member)
 
     def start_competition(self, title: str, duration: int, believe_reason: str, doubt_reason: str, is_anonymous: bool, bet_minimum: int) -> str:
-        self.active_competition: Competition = Competition(title, believe_reason, doubt_reason, self.discord_reference, is_anonymous, bet_minimum)
-        logger.info(f"Creating a new competition: \n  ID: {self.active_competition.id}\n  Title: {self.active_competition.title}\n  Guild: {self.discord_reference}\n  Is_Anonymous: {self.active_competition.is_anonymous}\n  Bet_Minimum: {self.active_competition.bet_minimum}")
+        self.active_competition: Competition = Competition(title, believe_reason, doubt_reason, self, is_anonymous, bet_minimum)
+        logger.info(f"Creating a new competition: \n  ID: {self.active_competition.id}\n  Title: {self.active_competition.title}\n  Guild: {self}\n  Is_Anonymous: {self.active_competition.is_anonymous}\n  Bet_Minimum: {self.active_competition.bet_minimum}")
 
         self.competition_history_collection.insert_one({
             "_id" : self.active_competition.id,
@@ -112,10 +114,12 @@ class Guild():
             self.active_competition.end_time = -1
 
             # Update DB to no longer track and declare the competition inactive
-            self.active_competition.clear_competition()
+            self.active_competition.clear_betting_records(self.betting_record_collection)
             self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {"is_active" : False}})
 
             await interaction.response.send_message(text_controller.output_string("winner_empty"))
+
+            self.active_competition = None
             return
         
         # Send correct winner text to client
@@ -127,10 +131,13 @@ class Guild():
             raise ValueError
         
         # Call Competition's helper functions to distribute the winnings of the competition
-        self.active_competition.declare_winner(... , winner_type_value)
+        self.active_competition.set_points_winnings(
+            betting_collection = self.betting_record_collection,
+            user_points_collection = self.user_points_collection,
+            competition_history_collection = self.competition_history_collection,
+            winning_group = winner_type_value
+        )
         
-        # Empty the betting Pool
-        self.active_competition.clear_competition()
         self.active_competition = None
 
     def check_if_betting_session_open(self):

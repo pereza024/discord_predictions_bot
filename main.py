@@ -325,7 +325,7 @@ def run():
             await guild_instance.end_competition(interaction, winner_type.value)
         else:
             await interaction.response.send_message(bot.language_controller.output_string("winner_prediction_over"), ephemeral = True)
-    @winner.error
+    """ @winner.error
     async def winner_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
         logger.error(bot.language_controller.output_string("logging_error").format(
@@ -333,7 +333,7 @@ def run():
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True) """
 
     ###
     ### Discord Bot Command - /points

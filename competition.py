@@ -1,5 +1,6 @@
 import secrets, bson
 
+import language
 from database import Database
 from setting import logger
 
@@ -14,13 +15,13 @@ class Competition_Reason():
         self.users = []
 
 class Competition():
-    def __create_id__(self, guild: discord.Guild) -> int:
+    def __create_id__(self) -> int:
         """Used for the purpose of creating a random ID for the competitions to be stored into the DB"""        
         return int.from_bytes(secrets.token_bytes(6), byteorder='big')
 
     def __init__(self, title: str, believe_reason: str, doubt_reason: str, guild: discord.Guild, is_anonymous: bool, bet_minimum: int):
         self.title: str = title # Title of the Competiton
-        self.id: int = self.__create_id__(guild) # ID of the competition
+        self.id: int = self.__create_id__() # ID of the competition
         self.guild: discord.Guild = guild # Associated Discord server calling for the competition
         self.timer: int = -1
         self.end_time: int = -1
@@ -42,41 +43,55 @@ class Competition():
         
         mongo_client.insert_betting_record(interaction, is_doubter, amount)
 
-    def declare_winner(self, mongo_client: Database, winning_group: int):
+    def set_points_winnings(self, betting_collection: Collection, user_points_collection: Collection, competition_history_collection: Collection, winning_group: int):
         user_believers, user_doubter = self.believe.users, self.doubt.users
-
-        # TODO: Determine winning amount
         amount = 0
-        member_points_collection: Collection = mongo_client.get_guild_points_collection(self.guild)
-        betting_pool_collection: Collection = mongo_client.get_guild_betting_pool_collection(self.guild)
-        if winning_group == 1:
+
+        if winning_group == language.end_text_reasons.BELIEVERS:
             for user in user_believers:
                 discord_member = self.guild.get_member(user["_id"])
 
-                user_points_data = member_points_collection.find_one({"_id" : user["_id"]})
-                user_betting_data = betting_pool_collection.find_one({"_id" : user["_id"]})
+                user_points_data = user_points_collection.find_one({"_id" : user["_id"]})
+                user_winning_data = user_points_data["wins"]
+                user_betting_data = betting_collection.find_one({"_id" : user["_id"]})
 
                 user_winning_ratio = user_betting_data["points"] / self.believe.amount
                 amount = round(user_winning_ratio * self.doubt.amount + user_betting_data['points'])
                 
                 logger.info(f"User: {discord_member.display_name or discord_member.name} (ID: {discord_member.id}) \n Has won {amount}\n Prediction: {self.title}")
 
-                betting_pool_collection.delete_one({"_id" : user_betting_data['_id']})
-                member_points_collection.replace_one({"_id" : user_points_data['_id']}, {"name" : user_points_data['name'], "points" : user_points_data["points"] + amount}, True)
+                # TODO: Include logic for new winning history
+                user_winning_data["number_of"] += 1
+
+                user_points_collection.update_one({"_id" : user_points_data["_id"]}, {"$set" : {
+                    "points" : user_points_data["points"] + amount,
+                    "wins" : user_winning_data
+                }})
+                
         elif winning_group == 2:
             for user in user_doubter:
                 discord_member = self.guild.get_member(user["_id"])
 
-                user_points_data = member_points_collection.find_one({"_id" : user["_id"]})
-                user_betting_data = betting_pool_collection.find_one({"_id" : user["_id"]})
+                user_points_data = user_points_collection.find_one({"_id" : user["_id"]})
+                user_winning_data = user_points_data["wins"]
+                user_betting_data = betting_collection.find_one({"_id" : user["_id"]})
 
                 user_winning_ratio = user_betting_data["points"] / self.doubt.amount
                 amount = round(user_winning_ratio * self.believe.amount + user_betting_data['points'])
 
                 logger.info(f"User: {discord_member.display_name or discord_member.name} (ID: {discord_member.id}) \n Has won {amount}\n Prediction: {self.title}")
 
-                betting_pool_collection.delete_one({"_id" : user_betting_data['_id']})
-                member_points_collection.replace_one({"_id" : user_points_data['_id']}, {"name" : user_points_data['name'], "points" : user_points_data["points"] + amount}, True)
+                # TODO: Include logic for new winning history
+                user_winning_data["number_of"] += 1
 
-    def clear_competition(self, mongo_client: Database, is_refund: bool = False):
-        mongo_client.clear_records(self.guild, is_refund)
+                user_points_collection.update_one({"_id" : user_points_data["_id"]}, {"$set" : {
+                    "points" : user_points_data["points"] + amount,
+                    "wins" : user_winning_data
+                }})
+        
+        competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {"is_active" : False}})
+        
+        self.clear_betting_records(betting_collection)
+
+    def clear_betting_records(self, collection: Collection):
+        collection.delete_many({})
