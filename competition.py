@@ -1,4 +1,4 @@
-from uuid import uuid1
+import secrets, bson
 
 from database import Database
 from setting import logger
@@ -14,9 +14,13 @@ class Competition_Reason():
         self.users = []
 
 class Competition():
-    def __init__(self, title: str, believe_reason: str, doubt_reason: str, guild: discord.guild, is_anonymous: bool, bet_minimum: int):
+    def __create_id__(self, guild: discord.Guild) -> int:
+        """Used for the purpose of creating a random ID for the competitions to be stored into the DB"""        
+        return int.from_bytes(secrets.token_bytes(6), byteorder='big')
+
+    def __init__(self, title: str, believe_reason: str, doubt_reason: str, guild: discord.Guild, is_anonymous: bool, bet_minimum: int):
         self.title: str = title # Title of the Competiton
-        self.id: int = 1 # (int.from_bytes(uuid1().bytes, byteorder='big', signed=False) >> 64) * -1 # ID of the competition
+        self.id: int = self.__create_id__(guild) # ID of the competition
         self.guild: discord.Guild = guild # Associated Discord server calling for the competition
         self.timer: int = -1
         self.end_time: int = -1
