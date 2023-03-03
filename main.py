@@ -163,45 +163,8 @@ def run():
     )
     @app_commands.check(is_channel)
     async def believe(interaction: discord.Interaction, amount: int):
-        member_points_collection = mongo_client.get_guild_points_collection(interaction.guild)
-        member_point_data = member_points_collection.find_one({"_id": interaction.user.id})
-        
-        if bot.active_competition and bot.Timer > -1:
-            for user in bot.active_competition.doubt.users:
-                if interaction.user.id == user['_id']:
-                    await interaction.response.send_message(bot.language_controller.output_string("betting_side_error").format(
-                        mention = interaction.user.mention
-                    ), ephemeral = True)
-                    return
-            if 0 >= member_point_data['points'] or amount >= member_point_data['points'] or 0 >= amount:
-                await interaction.response.send_message(bot.language_controller.output_string("betting_amount_error").format(
-                    mention = interaction.user.mention
-                ), ephemeral = True)
-                return
-            else:
-                bot.active_competition.add_user_to_pool(interaction, mongo_client, False, amount)
-                value = member_point_data["points"] - amount
-                member_points_collection.replace_one({"_id" : interaction.user.id}, {"name" : member_point_data['name'], "points" : value}, True)
-                await interaction.response.send_message(bot.language_controller.output_string("betting_believe_result").format(
-                    name = interaction.user.display_name,
-                    amount = amount,
-                    title = bot.active_competition.title
-                ), ephemeral = False)
-                
-                logger.info(bot.language_controller.output_string("logging_betting_positive").format(
-                    guild = interaction.guild,
-                    name = member_point_data['name'],
-                    id = member_point_data['_id'],
-                    amount = amount
-                ))
-        elif bot.active_competition and bot.Timer == -1:
-            await interaction.response.send_message(bot.language_controller.output_string("betting_over_error").format(
-                mention = interaction.user.mention
-            ), ephemeral = True)
-        else:
-            await interaction.response.send_message(bot.language_controller.output_string("betting_prediction_over_error").format(
-                mention = interaction.user.mention
-            ), ephemeral = True)
+        guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
+        await guild_instance.user_bet(interaction, amount, False)
     @believe.error
     async def believe_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
@@ -225,46 +188,10 @@ def run():
     )
     @app_commands.check(is_channel)
     async def doubt(interaction: discord.Interaction, amount: int):
-        member_points_collection = mongo_client.get_guild_points_collection(interaction.guild)
-        member_point_data = member_points_collection.find_one({"_id": interaction.user.id})
-
-        if bot.active_competition and bot.Timer > -1:
-            for user in bot.active_competition.believe.users:
-                if interaction.user.id == user['_id']:
-                    await interaction.response.send_message(bot.language_controller.output_string("betting_side_error").format(
-                        mention = interaction.user.mention
-                    ), ephemeral = True)
-                    return
-            if 0 >= member_point_data['points'] or amount >= member_point_data['points'] or 0 >= amount:
-                await interaction.response.send_message(bot.language_controller.output_string("betting_amount_error").format(
-                    mention = interaction.user.mention
-                ), ephemeral = True)
-                return
-            else:
-                bot.active_competition.add_user_to_pool(interaction, mongo_client, True, amount)
-                value = member_point_data["points"] - amount
-                member_points_collection.replace_one({"_id" : interaction.user.id}, {"name" : member_point_data['name'], "points" : value}, True)
-                await interaction.response.send_message(bot.language_controller.output_string("betting_doubt_result").format(
-                    name = interaction.user.display_name,
-                    amount = amount,
-                    title = bot.active_competition.title
-                ), ephemeral = False)
-
-                logger.info(bot.language_controller.output_string("logging_betting_negative").format(
-                    guild = interaction.guild,
-                    name = member_point_data['name'],
-                    id = member_point_data['_id'],
-                    amount = amount
-                ))
-        elif bot.active_competition and bot.Timer == -1:
-            await interaction.response.send_message(bot.language_controller.output_string("betting_over_error").format(
-                mention = interaction.user.mention
-            ), ephemeral = True)
-        else:
-            await interaction.response.send_message(bot.language_controller.output_string("betting_prediction_over_error").format(
-                mention = interaction.user.mention
-            ), ephemeral = True)
-    @doubt.error
+        guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
+        await guild_instance.user_bet(interaction, amount, True)
+        
+    """ @doubt.error
     async def doubt_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
         logger.error(bot.language_controller.output_string("logging_error").format(
@@ -272,7 +199,7 @@ def run():
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True) """
 
     ###
     ### Discord Bot Command - /refund
@@ -352,7 +279,7 @@ def run():
             mention = interaction.user.mention,
             amount = round(data["points"])
         ), ephemeral = True)
-    @points.error
+    """ @points.error
     async def points_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
         logger.error(bot.language_controller.output_string("logging_error").format(
@@ -360,7 +287,7 @@ def run():
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True) """
 
     ###
     ### Discord Bot Command - /check_bet
