@@ -60,7 +60,7 @@ class Guild():
         self.active_competition: Competition = None
         
         for member in self.discord_reference.members:
-            record = self.user_points_collection.find({"_id" : member.id})
+            record = self.user_points_collection.find_one({"_id" : member.id})
             if not record: 
                 self.__create_points_record__(member)
 
@@ -210,7 +210,7 @@ class Guild():
                     self.betting_record_collection.insert_one({
                         "_id" : interaction.user.id,
                         "bet_amount" : amount,
-                        "betting_side" : language.end_text_reasons.DOUBTERS.value
+                        "betting_side" : language.end_text_reasons.BELIEVERS.value
                     })
                 else:
                     # Update the competition logs
@@ -256,7 +256,7 @@ class Guild():
             # Resets the clocks to stop the while loop from having to keep executing
             self.active_competition.timer = -1
             self.active_competition.end_time = -1
-
+            
             # Update DB to no longer track and declare the competition inactive
             self.active_competition.clear_betting_records(self.betting_record_collection)
             self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {"is_active" : False}})
@@ -277,16 +277,16 @@ class Guild():
                 "doubt.won" : True
             }})
             await interaction.response.send_message(text_controller.get_prediction_end(self.active_competition, language.end_text_reasons.DOUBTERS))
-        else:
-            raise ValueError
-        
+
         # Call Competition's helper functions to distribute the winnings of the competition
         self.active_competition.set_points_winnings(
+            guild = self.discord_reference,
             betting_collection = self.betting_record_collection,
             user_points_collection = self.user_points_collection,
-            competition_history_collection = self.competition_history_collection,
             winning_group = winner_type_value
         )
+
+        self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {"is_active" : False}})
         
         self.active_competition = None
 

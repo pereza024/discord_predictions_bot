@@ -79,6 +79,11 @@ def run():
     @bot.event
     async def on_connect():
         logger.info("Bot connected to client")
+        
+    @bot.event
+    async def on_ready():
+        logger.info(bot.language_controller.output_string("bot_login").format(user = bot.user, id = bot.user.id))
+        await bot.tree.sync()
 
         # Registers the Discord Servers into the DB
         for guild in bot.guilds:
@@ -88,12 +93,8 @@ def run():
             # Look and recreate active predictions
             guild_instance: Guild = bot.guilds_instances.get(guild.id)
             guild_instance.__lookup_active_competition__()
+
         logger.info(f"Finished registering guilds")
-        
-    @bot.event
-    async def on_ready():
-        logger.info(bot.language_controller.output_string("bot_login").format(user = bot.user, id = bot.user.id))
-        await bot.tree.sync()
         
         # Scan for active users and give them points
         # check_server_member_status()

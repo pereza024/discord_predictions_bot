@@ -39,53 +39,43 @@ class Competition():
             "amount" : amount
         }
 
-    def set_points_winnings(self, betting_collection: Collection, user_points_collection: Collection, competition_history_collection: Collection, winning_group: int):
-        user_believers, user_doubter = self.believe.users, self.doubt.users
+    def set_points_winnings(self, guild: discord.Guild, betting_collection: Collection, user_points_collection: Collection, winning_group: int):
+        betting_records = betting_collection.find({})
         amount = 0
 
-        if winning_group == language.end_text_reasons.BELIEVERS:
-            for user in user_believers:
-                discord_member = self.guild.get_member(user["_id"])
+        if winning_group == language.end_text_reasons.BELIEVERS.value:
+            for betting_record in betting_records:
+                if betting_record["betting_side"] == language.end_text_reasons.DOUBTERS.value:
+                    break
+                discord_member = guild.get_member(betting_record["_id"])
+                user_points_record = user_points_collection.find_one({"_id" : betting_record["_id"]})
 
-                user_points_data = user_points_collection.find_one({"_id" : user["_id"]})
-                user_winning_data = user_points_data["wins"]
-                user_betting_data = betting_collection.find_one({"_id" : user["_id"]})
-
-                user_winning_ratio = user_betting_data["points"] / self.believe.amount
-                amount = round(user_winning_ratio * self.doubt.amount + user_betting_data['points'])
-                
+                user_winning_ratio = betting_record["bet_amount"] / self.believe.amount
+                amount = round(user_winning_ratio * self.doubt.amount + betting_record["bet_amount"])
                 logger.info(f"User: {discord_member.display_name or discord_member.name} (ID: {discord_member.id}) \n Has won {amount}\n Prediction: {self.title}")
 
                 # TODO: Include logic for new winning history
-                user_winning_data["number_of"] += 1
-
-                user_points_collection.update_one({"_id" : user_points_data["_id"]}, {"$set" : {
-                    "points" : user_points_data["points"] + amount,
-                    "wins" : user_winning_data
+                user_points_collection.update_one({"_id" : betting_record["_id"]}, { "$set" : {
+                    "points" : user_points_record["points"] + amount,
+                    "wins.number_of" : user_points_record["wins"]["number_of"] + 1
                 }})
                 
-        elif winning_group == 2:
-            for user in user_doubter:
-                discord_member = self.guild.get_member(user["_id"])
+        elif winning_group == language.end_text_reasons.DOUBTERS.value:
+            for betting_record in betting_records:
+                if betting_record["betting_side"] == language.end_text_reasons.BELIEVERS.value:
+                    break
+                discord_member = guild.get_member(betting_record["_id"])
+                user_points_record = user_points_collection.find_one({"_id" : betting_record["_id"]})
 
-                user_points_data = user_points_collection.find_one({"_id" : user["_id"]})
-                user_winning_data = user_points_data["wins"]
-                user_betting_data = betting_collection.find_one({"_id" : user["_id"]})
-
-                user_winning_ratio = user_betting_data["points"] / self.doubt.amount
-                amount = round(user_winning_ratio * self.believe.amount + user_betting_data['points'])
-
+                user_winning_ratio = betting_record["bet_amount"] / self.doubt.amount
+                amount = round(user_winning_ratio * self.believe.amount + betting_record["bet_amount"])
                 logger.info(f"User: {discord_member.display_name or discord_member.name} (ID: {discord_member.id}) \n Has won {amount}\n Prediction: {self.title}")
 
                 # TODO: Include logic for new winning history
-                user_winning_data["number_of"] += 1
-
-                user_points_collection.update_one({"_id" : user_points_data["_id"]}, {"$set" : {
-                    "points" : user_points_data["points"] + amount,
-                    "wins" : user_winning_data
+                user_points_collection.update_one({"_id" : betting_record["_id"]}, { "$set" : {
+                    "points" : user_points_record["points"] + amount,
+                    "wins.number_of" : user_points_record["wins"]["number_of"] + 1
                 }})
-        
-        competition_history_collection.update_one({"_id" : self.id}, {"$set" : {"is_active" : False}})
         
         self.clear_betting_records(betting_collection)
 
