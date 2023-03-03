@@ -106,6 +106,145 @@ class Guild():
             bet_min = self.active_competition.bet_minimum
         )
 
+    async def user_bet(self, interaction: discord.Interaction, amount: int, is_doubter: bool) -> str:
+        if not self.active_competition:
+            await interaction.response.send_message(language.Language().output_string("betting_prediction_over_error").format(
+                mention = interaction.user.mention
+            ), ephemeral = True)
+            return
+
+        user_betting_record = self.betting_record_collection.find_one({"_id" : interaction.user.id})
+        user_points_record = self.user_points_collection.find_one({"_id" : interaction.user.id})
+        active_competition_record = self.competition_history_collection.find_one({"_id" : self.active_competition.id})
+
+        if self.active_competition and self.active_competition.timer > -1:
+            # User already picked opposite side
+            if is_doubter:
+                for user in active_competition_record["believe"]["users"]:
+                    if interaction.user.id == user["id"]:
+                        await interaction.response.send_message(language.Language().output_string("betting_side_error").format(
+                            mention = interaction.user.mention
+                        ), ephemeral = True)
+                    return
+            else:
+                for user in active_competition_record["doubt"]["users"]:
+                    if interaction.user.id == user["id"]:
+                        await interaction.response.send_message(language.Language().output_string("betting_side_error").format(
+                            mention = interaction.user.mention
+                        ), ephemeral = True)
+                    return
+            
+            # User has insufficiant points for betting
+            # TODO: Might want to split this up into seperate exceptions to give more specific feedback to the user
+            if amount > user_points_record['points'] or amount < self.active_competition.bet_minimum or user_points_record['points'] <= 0:
+                await interaction.response.send_message(language.Language().output_string("betting_amount_error").format(
+                    mention = interaction.user.mention
+                ), ephemeral = True)
+                return
+
+            if is_doubter:
+                if not user_betting_record:
+                    # Update the competition logs
+                    users_array: list = active_competition_record["doubt"]["users"]
+                    record = self.active_competition.create_user_history_record(interaction.user, amount)
+                    users_array.append(record)
+                    self.competition_history_collection.update_one({"_id" : self.active_competition.id} , {"$set" : {
+                        "doubt.total_amount": active_competition_record["doubt"]["total_amount"] + amount,
+                        "doubt.users": users_array
+                    }})
+                    # Add betting history records
+                    self.betting_record_collection.insert_one({
+                        "_id" : interaction.user.id,
+                        "bet_amount" : amount,
+                        "betting_side" : language.end_text_reasons.DOUBTERS.value
+                    })
+                else:
+                    # Update the competition logs
+                    users_array: list = active_competition_record["doubt"]["users"]
+                    for user in users_array:
+                        if user["id"] == interaction.user.id:
+                            user["amount"] = user["amount"] + amount
+                            break
+                    self.competition_history_collection.update_one({"_id" : self.active_competition.id}, { "$set" : {
+                        "doubt.total_amount" : active_competition_record["doubt"]["total_amount"] + amount,
+                        "doubt.users": users_array
+                    }})
+                    # Update to the betting logs
+                    self.betting_record_collection.update_one({"_id" : interaction.user.id}, { "$set" : {
+                        "bet_amount": user_betting_record["bet_amount"] + amount
+                    }})
+
+                # Remove points from the user's wallet
+                self.user_points_collection.update_one({"_id" : interaction.user.id}, {"$set": {
+                    "points" : user_points_record["points"] - amount
+                }})
+                
+                await interaction.response.send_message(language.Language().output_string("betting_doubt_result").format(
+                    name = interaction.user.display_name,
+                    amount = amount,
+                    title = self.active_competition.title
+                ))
+
+                logger.info(language.Language().output_string("logging_betting_negative").format(
+                    guild = interaction.guild,
+                    name = interaction.user.name,
+                    id = interaction.user.id,
+                    amount = amount
+                ))
+
+            else:
+                if not user_betting_record:
+                    # Update the competition logs
+                    users_array: list = active_competition_record["believe"]["users"]
+                    record = self.active_competition.create_user_history_record(interaction.user, amount)
+                    users_array.append(record)
+                    self.competition_history_collection.update_one({"_id" : self.active_competition.id} , {"$set" : {
+                        "believe.total_amount": active_competition_record["believe"]["total_amount"] + amount,
+                        "believe.users": users_array
+                    }})
+                    # Add betting history records
+                    self.betting_record_collection.insert_one({
+                        "_id" : interaction.user.id,
+                        "bet_amount" : amount,
+                        "betting_side" : language.end_text_reasons.DOUBTERS.value
+                    })
+                else:
+                    # Update the competition logs
+                    users_array: list = active_competition_record["believe"]["users"]
+                    for user in users_array:
+                        if user["id"] == interaction.user.id:
+                            user["amount"] = user["amount"] + amount
+                            break
+                    self.competition_history_collection.update_one({"_id" : self.active_competition.id}, { "$set" : {
+                        "believe.total_amount" : active_competition_record["believe"]["total_amount"] + amount,
+                        "believe.users": users_array
+                    }})
+                    # Update to the betting logs
+                    self.betting_record_collection.update_one({"_id" : interaction.user.id}, { "$set" : {
+                        "bet_amount": user_betting_record["bet_amount"] + amount
+                    }})
+
+                # Remove points from the user's wallet
+                self.user_points_collection.update_one({"_id" : interaction.user.id}, {"$set": {
+                    "points" : user_points_record["points"] - amount
+                }})
+                
+                await interaction.response.send_message(language.Language().output_string("betting_believe_result").format(
+                    name = interaction.user.display_name,
+                    amount = amount,
+                    title = self.active_competition.title
+                ))
+
+                logger.info(language.Language().output_string("logging_betting_positive").format(
+                    guild = interaction.guild,
+                    name = interaction.user.name,
+                    id = interaction.user.id,
+                    amount = amount
+                ))
+        elif self.active_competition and self.active_competition.timer == -1:
+            await interaction.response.send_message(language.Language().output_string("betting_over_error").format(
+                mention = interaction.user.mention
+            ), ephemeral = True)
     async def end_competition(self, interaction: discord.Interaction, winner_type_value):
         text_controller = language.Language()
         if self.active_competition.believe.amount == 0 and self.active_competition.doubt.amount == 0:

@@ -33,15 +33,11 @@ class Competition():
     def format_time(self, minutes: int, seconds: int):
         return '{:02d}:{:02d}'.format(minutes, seconds)
 
-    def add_user_to_pool(self, interaction: discord.Interaction, mongo_client: Database, is_doubter: bool, amount: int):
-        if is_doubter:
-            self.doubt.amount += amount
-            self.doubt.users.append({"_id": interaction.user.id, "name": interaction.user.display_name or interaction.user.name })
-        else:
-            self.believe.amount += amount
-            self.believe.users.append({"_id": interaction.user.id, "name": interaction.user.display_name or interaction.user.name })
-        
-        mongo_client.insert_betting_record(interaction, is_doubter, amount)
+    def create_user_history_record(self, user: discord.User | discord.Member, amount: int = 0):
+        return {
+            "id" : user.id,
+            "amount" : amount
+        }
 
     def set_points_winnings(self, betting_collection: Collection, user_points_collection: Collection, competition_history_collection: Collection, winning_group: int):
         user_believers, user_doubter = self.believe.users, self.doubt.users
