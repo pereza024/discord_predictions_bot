@@ -190,9 +190,8 @@ def run():
     @app_commands.check(is_channel)
     async def doubt(interaction: discord.Interaction, amount: int):
         guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
-        await guild_instance.user_bet(interaction, amount, True)
-        
-    """ @doubt.error
+        await guild_instance.user_bet(interaction, amount, True) 
+    @doubt.error
     async def doubt_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
         logger.error(bot.language_controller.output_string("logging_error").format(
@@ -200,7 +199,7 @@ def run():
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True) """
+        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
 
     ###
     ### Discord Bot Command - /refund
@@ -213,12 +212,9 @@ def run():
     @app_commands.default_permissions()
     @app_commands.check(is_owner and is_channel)
     async def refund(interaction: discord.Interaction, user: discord.User = None):
-        if bot.active_competition:
-            await interaction.response.send_message(bot.language_controller.get_prediction_end(bot.active_competition, language.end_text_reasons.REFUND), ephemeral = False)
-            bot.Timer = -1
-            bot.end_time = -1
-            bot.active_competition.clear_competition(mongo_client, True)
-            bot.active_competition = None
+        guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
+        if guild_instance.active_competition:
+            await guild_instance.end_competition(interaction, language.end_text_reasons.REFUND.value)
         else:
             await interaction.response.send_message(bot.language_controller.output_string("refund_prediction_over"), ephemeral = True)
     @refund.error
@@ -253,7 +249,7 @@ def run():
             await guild_instance.end_competition(interaction, winner_type.value)
         else:
             await interaction.response.send_message(bot.language_controller.output_string("winner_prediction_over"), ephemeral = True)
-    """ @winner.error
+    @winner.error
     async def winner_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
         logger.error(bot.language_controller.output_string("logging_error").format(
@@ -261,7 +257,7 @@ def run():
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True) """
+        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
 
     ###
     ### Discord Bot Command - /points
@@ -280,7 +276,7 @@ def run():
             mention = interaction.user.mention,
             amount = round(data["points"])
         ), ephemeral = True)
-    """ @points.error
+    @points.error
     async def points_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
         logger.error(bot.language_controller.output_string("logging_error").format(
@@ -288,7 +284,7 @@ def run():
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True) """
+        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
 
     ###
     ### Discord Bot Command - /check_bet

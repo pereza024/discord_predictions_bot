@@ -250,13 +250,14 @@ class Guild():
             await interaction.response.send_message(language.Language().output_string("betting_over_error").format(
                 mention = interaction.user.mention
             ), ephemeral = True)
+    
     async def end_competition(self, interaction: discord.Interaction, winner_type_value):
         text_controller = language.Language()
-        if self.active_competition.believe.amount == 0 and self.active_competition.doubt.amount == 0:
-            # Resets the clocks to stop the while loop from having to keep executing
-            self.active_competition.timer = -1
-            self.active_competition.end_time = -1
-            
+        # Resets the clocks to stop the while loop from having to keep executing
+        self.active_competition.timer = -1
+        self.active_competition.end_time = -1
+        
+        if self.active_competition.believe.amount == 0 and self.active_competition.doubt.amount == 0:    
             # Update DB to no longer track and declare the competition inactive
             self.active_competition.clear_betting_records(self.betting_record_collection)
             self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {"is_active" : False}})
@@ -266,6 +267,13 @@ class Guild():
             self.active_competition = None
             return
         
+        if winner_type_value == language.end_text_reasons.REFUND.value:
+            self.active_competition.refund_points(self.betting_record_collection, self.user_points_collection)
+            await interaction.response.send_message(language.Language().get_prediction_end(self.active_competition, language.end_text_reasons.REFUND), ephemeral = False)
+            self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {"is_active" : False}})
+            self.active_competition = None
+            return
+
         # Send correct winner text to client
         if winner_type_value == language.end_text_reasons.BELIEVERS.value:
             self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {

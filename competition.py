@@ -38,6 +38,17 @@ class Competition():
             "id" : user.id,
             "amount" : amount
         }
+    def refund_points(self, betting_collection: Collection, user_points_collection: Collection):
+        betting_records = betting_collection.find()
+        for betting_record in betting_records:
+            user_points_record = user_points_collection.find_one({"_id" : betting_record["_id"]})
+            logger.info(f"Refunding User: {user_points_record['name']} (ID: {user_points_record['_id']}) for {betting_record['bet_amount']}")
+            user_points_collection.update_one({"_id" : betting_record["_id"]}, {"$set" : {
+                "points": user_points_record["points"] + betting_record["bet_amount"]
+            }})
+        
+        self.clear_betting_records(betting_collection)
+
 
     def set_points_winnings(self, guild: discord.Guild, betting_collection: Collection, user_points_collection: Collection, winning_group: int):
         betting_records = betting_collection.find({})
