@@ -74,12 +74,14 @@ class Guild():
             "believe" : {
                 "title": self.active_competition.believe.title,
                 "users": self.active_competition.believe.users,
-                "total_amount": self.active_competition.believe.amount
+                "total_amount": self.active_competition.believe.amount,
+                "won" : False
             },
             "doubt" : {
                 "title": self.active_competition.doubt.title,
                 "users": self.active_competition.doubt.users,
-                "total_amount": self.active_competition.doubt.amount
+                "total_amount": self.active_competition.doubt.amount,
+                "won" : False
             },
             "is_active" : True,
             "is_anonymous" : self.active_competition.is_anonymous,
@@ -225,7 +227,7 @@ class Guild():
                     self.betting_record_collection.update_one({"_id" : interaction.user.id}, { "$set" : {
                         "bet_amount": user_betting_record["bet_amount"] + amount
                     }})
-                self.active_competition.believe += amount
+                self.active_competition.believe.amount += amount
 
                 # Remove points from the user's wallet
                 self.user_points_collection.update_one({"_id" : interaction.user.id}, {"$set": {
@@ -266,8 +268,14 @@ class Guild():
         
         # Send correct winner text to client
         if winner_type_value == language.end_text_reasons.BELIEVERS.value:
+            self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {
+                "believe.won" : True
+            }})
             await interaction.response.send_message(text_controller.get_prediction_end(self.active_competition, language.end_text_reasons.BELIEVERS))
         elif winner_type_value == language.end_text_reasons.DOUBTERS.value:
+            self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {
+                "doubt.won" : True
+            }})
             await interaction.response.send_message(text_controller.get_prediction_end(self.active_competition, language.end_text_reasons.DOUBTERS))
         else:
             raise ValueError

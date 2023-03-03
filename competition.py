@@ -85,7 +85,7 @@ class Competition():
                     "wins" : user_winning_data
                 }})
         
-        competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {"is_active" : False}})
+        competition_history_collection.update_one({"_id" : self.id}, {"$set" : {"is_active" : False}})
         
         self.clear_betting_records(betting_collection)
 
