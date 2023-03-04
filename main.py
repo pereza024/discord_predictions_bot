@@ -310,7 +310,7 @@ def run():
     )
     async def leaderboard(interaction: discord.Interaction):
         results: list = mongo_client.get_guild_points_leaderboard(interaction.guild)
-        await interaction.response.send_message(bot.language_controller.get_leaderboard_text(interaction.guild, results))
+        await interaction.response.send_message(bot.language_controller.format_leaderboard(interaction.guild, results))
     
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 

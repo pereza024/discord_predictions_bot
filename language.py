@@ -50,7 +50,7 @@ class Language():
        def format_time(self, minutes: int, seconds: int):
         return '{:02d}:{:02d}'.format(minutes, seconds)
 
-       def get_leaderboard_text(self, guild: discord.Guild, results: list) -> str:
+       def format_leaderboard(self, guild: discord.Guild, results: list) -> str:
               text = f"> **{guild.name}'s Points Leaderboard** \n"
 
               for record in results:
