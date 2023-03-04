@@ -160,7 +160,7 @@ def run():
     @app_commands.check(is_channel)
     async def believe(interaction: discord.Interaction, amount: int):
         guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
-        await guild_instance.user_bet(interaction, amount, False)
+        await guild_instance.set_user_bet(interaction, amount, False)
     @believe.error
     async def believe_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
@@ -185,7 +185,7 @@ def run():
     @app_commands.check(is_channel)
     async def doubt(interaction: discord.Interaction, amount: int):
         guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
-        await guild_instance.user_bet(interaction, amount, True) 
+        await guild_instance.set_user_bet(interaction, amount, True) 
     @doubt.error
     async def doubt_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
