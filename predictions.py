@@ -1,5 +1,4 @@
-import secrets, bson, datetime, time
-from threading import Timer
+import secrets, datetime, time, random
 
 import language
 from setting import logger
@@ -12,6 +11,7 @@ from pymongo.collection import Collection
 
 class Guild():
     __DEFAULT_USER_POINTS__ : int = 1000
+    __voice_channel_status__ = True
 
     def __fetch_collection__(self, collection_type: str, database_client: pymongo.MongoClient) -> Collection:
         database: Database = database_client.get_database(f"Guild_ID:{self.discord_reference.id}")
@@ -49,26 +49,25 @@ class Guild():
             self.active_competition.doubt.amount = record["doubt"]["total_amount"]
             self.active_competition.doubt.users = record["doubt"]["users"]
 
-    async def __lookup_voice_channel_activity__(self):
+    def __lookup_voice_channel_activity__(self):
         logger.info(language.Language().output_string("polling_checker").format(name = self.discord_reference.name))
-        for voice_channel in self.discord_reference.voice_channels:
-            if len(voice_channel.members) > 0:
-                for member in voice_channel.members:
-                    points = 0
-                    if member.voice.deaf or member.voice.self_deaf:
-                        points = random.randint(1 , 5)
-                    else:
-                        points = random.randint(20 , 30)
-                    # self.add_user_points() # Function does not work
-                    logger.info(bot.language_controller.output_string("activity_reward").format(
-                        name = member.display_name or member.name,
-                        id = member.id,
-                        points = points,
-                        guild_name = guild.discord_reference.name
-                    ))
-        
-        this = Timer(60 * 15, check_server_member_status)
-        this.start()
+        while self.__voice_channel_status__:
+            for voice_channel in self.discord_reference.voice_channels:
+                if len(voice_channel.members) > 0:
+                    for member in voice_channel.members:
+                        points = 0
+                        if member.voice.deaf or member.voice.self_deaf:
+                            points = random.randint(1 , 5)
+                        else:
+                            points = random.randint(20 , 30)
+                        self.set_user_points(member, points)
+                        logger.info(language.Language().output_string("activity_reward").format(
+                            name = member.display_name or member.name,
+                            id = member.id,
+                            points = points,
+                            guild_name = self.discord_reference.name
+                            ))
+            time.sleep(30)
 
     def __init__(self, discord_reference: discord.Guild, database_client: pymongo.MongoClient):
         __user_points__ = "User Points"
@@ -112,7 +111,14 @@ class Guild():
             anonymous = anon_text,
             bet_min = self.active_competition.bet_minimum
         )
+    
+    def set_user_points(self, user: discord.User, amount: int):
+        user_points_record = self.user_points_collection.find_one(({"_id" : user.id}))
 
+        self.user_points_collection.update_one({"_id" : user.id}, { "$set" : {
+            "points" : user_points_record["points"] + amount
+        }})
+    
     async def set_user_bet(self, interaction: discord.Interaction, amount: int, is_doubter: bool) -> str:
         if not self.active_competition:
             await interaction.response.send_message(language.Language().output_string("betting_prediction_over_error").format(

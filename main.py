@@ -1,5 +1,4 @@
-import random
-from threading import Timer
+import threading
 
 import setting, language
 from setting import logger
@@ -18,6 +17,8 @@ class Prediction_Bot(commands.Bot):
     end_time: int = -1
     active_competition: Competition = None
     language_controller = language.Language()
+
+    voice_channel_threads = []
 
 def is_owner(interaction: discord.Interaction):
     allowed_user_ids = [
@@ -66,17 +67,21 @@ def run():
             # Look and recreate active predictions
             guild_instance: Guild = bot.guilds_instances.get(guild.id)
             guild_instance.__lookup_active_competition__()
-
         logger.info(f"Finished registering guilds")
         
         # Scan for active users and give them points
-        for guild in bot.guilds:
-            await guild.__lookup_voice_channel_activity__()
+        for guild in bot.guilds_instances.values():
+            thread = threading.Timer(10.0, guild.__lookup_voice_channel_activity__)
+            bot.voice_channel_threads.append({
+                "_id" : guild.discord_reference.id,
+                "thread":thread
+            })
+            thread.start()
 
     @bot.event
     async def on_member_join(member: discord.Member):
         logger.info(f"Adding in {member.display_name or member.name} (ID: {member.id}) to the {member.guild} collection")
-        mongo_client.register_new_member(member)
+        # mongo_client.register_new_member(member)
 
     ###
     ### Discord Bot Command - /predict
@@ -112,18 +117,18 @@ def run():
                 while guild_instance.active_competition and guild_instance.active_competition.timer >= 0:
                     await interaction.edit_original_response(content = guild_instance.get_betting_session_status())
             else:
-                await interaction.response.send_message(Language().output_string("predict_in_progress_description"), ephemeral = True)
+                await interaction.response.send_message(language.Language().output_string("predict_in_progress_description"), ephemeral = True)
         else:
             await interaction.response.send_message("Error: Bot is not ready", ephemeral=True)
     @predict.error
     async def predict_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
-        logger.error(Language().output_string("logging_error").format(
+        logger.error(language.Language().output_string("logging_error").format(
             display_name = interaction.user.display_name,
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(Language().output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(language.Language().output_string("generic_error"), ephemeral = True)
 
     ###
     ### Discord Bot Command - /believe
