@@ -112,6 +112,16 @@ class Guild():
             bet_min = self.active_competition.bet_minimum
         )
     
+    def get_guild_points_leaderboard(self):
+        points_collection: Collection = self.user_points_collection
+        leaderboard = []
+        i = 0
+        for record in points_collection.find({}).sort("points", pymongo.DESCENDING):
+            if 5 >= i:
+                leaderboard.append(record)
+                i += 1
+        return leaderboard
+
     def set_user_points(self, user: discord.User, amount: int):
         user_points_record = self.user_points_collection.find_one(({"_id" : user.id}))
 
