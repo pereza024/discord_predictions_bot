@@ -272,7 +272,7 @@ class Guild():
         
         if winner_type_value == language.end_text_reasons.REFUND.value:
             self.active_competition.refund_points(self.betting_record_collection, self.user_points_collection)
-            await interaction.response.send_message(language.Language().get_prediction_end(self.active_competition, language.end_text_reasons.REFUND), ephemeral = False)
+            await interaction.response.send_message(language.Language().format_end_competition(self.active_competition, language.end_text_reasons.REFUND), ephemeral = False)
             self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {"is_active" : False}})
             self.active_competition = None
             return
@@ -282,12 +282,12 @@ class Guild():
             self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {
                 "believe.won" : True
             }})
-            await interaction.response.send_message(text_controller.get_prediction_end(self.active_competition, language.end_text_reasons.BELIEVERS))
+            await interaction.response.send_message(text_controller.format_end_competition(self.active_competition, language.end_text_reasons.BELIEVERS))
         elif winner_type_value == language.end_text_reasons.DOUBTERS.value:
             self.competition_history_collection.update_one({"_id" : self.active_competition.id}, {"$set" : {
                 "doubt.won" : True
             }})
-            await interaction.response.send_message(text_controller.get_prediction_end(self.active_competition, language.end_text_reasons.DOUBTERS))
+            await interaction.response.send_message(text_controller.format_end_competition(self.active_competition, language.end_text_reasons.DOUBTERS))
 
         # Call Competition's helper functions to distribute the winnings of the competition
         self.active_competition.set_points_winnings(

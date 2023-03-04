@@ -21,7 +21,7 @@ class Language():
                                    if language == text["lang"]:
                                           return text["text"]
 
-       def get_prediction_end(self, competition: Competition, reason: end_text_reasons, language: str = "en"):
+       def format_end_competition(self, competition: Competition, reason: end_text_reasons, language: str = "en"):
               if reason == end_text_reasons.REFUND:
                      return self.output_string("refund_issued").format(
                             title = competition.title
