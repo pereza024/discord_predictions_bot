@@ -2,10 +2,8 @@ import random
 from threading import Timer
 
 import setting, language
-from language import Language
 from setting import logger
-from competition import Competition
-from guild import Guild
+from predictions import (Guild, Competition)
 
 import discord
 from discord import app_commands
@@ -19,7 +17,7 @@ class Prediction_Bot(commands.Bot):
     Timer: int = -1
     end_time: int = -1
     active_competition: Competition = None
-    language_controller = Language()
+    language_controller = language.Language()
 
 def is_owner(interaction: discord.Interaction):
     allowed_user_ids = [
@@ -107,12 +105,12 @@ def run():
     ###
     @app_commands.check(is_owner and is_channel)
     @app_commands.describe(
-        title = Language().output_string("predict_title_description"),
-        duration = Language().output_string("predict_duration_description"),
-        believe_reason = Language().output_string("predict_believe_description"),
-        doubt_reason = Language().output_string("predict_doubt_description"),
-        is_anonymous = Language().output_string("predict_is_anonymous_description"),
-        bet_minimum = Language().output_string("predict_bet_minimum_description")
+        title = language.Language().output_string("predict_title_description"),
+        duration = language.Language().output_string("predict_duration_description"),
+        believe_reason = language.Language().output_string("predict_believe_description"),
+        doubt_reason = language.Language().output_string("predict_doubt_description"),
+        is_anonymous = language.Language().output_string("predict_is_anonymous_description"),
+        bet_minimum = language.Language().output_string("predict_bet_minimum_description")
     )
     @bot.tree.command(
         name="predict",

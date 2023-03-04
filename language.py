@@ -1,6 +1,6 @@
 import math, json
 from enum import Enum
-from competition import Competition
+from predictions import Competition
 from setting import logger
 
 import discord
