@@ -301,7 +301,7 @@ class Guild():
         
         self.active_competition = None
 
-    def check_if_betting_session_open(self):
+    def check_betting_session_status(self):
         if not self.active_competition:
             raise RuntimeError
 
