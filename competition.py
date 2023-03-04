@@ -33,7 +33,7 @@ class Competition():
     def format_time(self, minutes: int, seconds: int):
         return '{:02d}:{:02d}'.format(minutes, seconds)
 
-    def create_user_history_record(self, user: discord.User | discord.Member, amount: int = 0):
+    def create_user_history_record(self, user: discord.User, amount: int = 0):
         return {
             "id" : user.id,
             "amount" : amount

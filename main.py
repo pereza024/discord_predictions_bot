@@ -16,7 +16,7 @@ from discord.ext import (commands)
 from pymongo import MongoClient
 
 class Prediction_Bot(commands.Bot):
-    guilds_instances: dict[int : Guild] = {}
+    guilds_instances: dict = {}
     Timer: int = -1
     end_time: int = -1
     active_competition: Competition = None
