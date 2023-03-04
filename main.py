@@ -1,11 +1,10 @@
-import time, datetime, random
+import random
 from threading import Timer
 
 import setting, language
 from language import Language
 from setting import logger
 from competition import Competition
-from database import Database
 from guild import Guild
 
 import discord
@@ -50,14 +49,12 @@ def run():
     intents.message_content = True
     intents.members = True
 
-    
-    mongo_client = Database(setting.CLUSTER_LINK, setting.DB_NAME)
     bot: Prediction_Bot = Prediction_Bot(command_prefix="$$", intents=intents)
 
     def check_server_member_status():
-        for guild in bot.guilds:
-            logger.info(bot.language_controller.output_string("polling_checker").format(name = guild.name))
-            for voice_channel in guild.voice_channels:
+        for guild in bot.guilds_instances.values():
+            logger.info(language.Language().output_string("polling_checker").format(name = guild.discord_reference.name))
+            for voice_channel in guild.discord_reference.voice_channels:
                 if len(voice_channel.members) > 0:
                     for member in voice_channel.members:
                         points = 0
@@ -65,12 +62,12 @@ def run():
                             points = random.randint(1 , 5)
                         else:
                             points = random.randint(20 , 30)
-                        mongo_client.insert_points_record(guild, member, points)
+                        # guild.add_user_points() # Function does not work
                         logger.info(bot.language_controller.output_string("activity_reward").format(
                             name = member.display_name or member.name,
                             id = member.id,
                             points = points,
-                            guild_name = guild.name
+                            guild_name = guild.discord_reference.name
                         ))
         
         this = Timer(60 * 15, check_server_member_status)
@@ -97,7 +94,7 @@ def run():
         logger.info(f"Finished registering guilds")
         
         # Scan for active users and give them points
-        # check_server_member_status()
+        check_server_member_status()
 
     @bot.event
     async def on_member_join(member: discord.Member):

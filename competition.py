@@ -1,7 +1,6 @@
 import secrets, bson
 
 import language
-from database import Database
 from setting import logger
 
 import discord
