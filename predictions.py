@@ -40,6 +40,7 @@ class Guild():
         })
     
     def __lookup_active_competition__(self):
+        """Function created for the bot to call anytime it needs to reference the DB if a competition session is active but not in active memory of the bot. Shouldn't be used for normal bot operations."""
         record = self.competition_history_collection.find_one({"is_active": True})
         if record:
             self.active_competition = Competition(record["title"], record["believe"]["title"], record["doubt"]["title"], self, record["is_anonymous"], record["bet_minimum"])
@@ -62,35 +63,18 @@ class Guild():
             record = self.user_points_collection.find_one({"_id" : member.id})
             if not record: 
                 self.__create_points_record__(member)
+    
+    def get_user_points(self, user: discord.User):
+        record = self.user_points_collection.find_one({"_id" : user.id})
+        return record["points"]
+    
+    def get_betting_session_status(self):
+        if not self.active_competition:
+            raise RuntimeError
 
-    def start_competition(self, title: str, duration: int, believe_reason: str, doubt_reason: str, is_anonymous: bool, bet_minimum: int) -> str:
-        self.active_competition: Competition = Competition(title, believe_reason, doubt_reason, self, is_anonymous, bet_minimum)
-        logger.info(f"Creating a new competition: \n  ID: {self.active_competition.id}\n  Title: {self.active_competition.title}\n  Guild: {self}\n  Is_Anonymous: {self.active_competition.is_anonymous}\n  Bet_Minimum: {self.active_competition.bet_minimum}")
-
-        self.competition_history_collection.insert_one({
-            "_id" : self.active_competition.id,
-            "title" : self.active_competition.title,
-            "believe" : {
-                "title": self.active_competition.believe.title,
-                "users": self.active_competition.believe.users,
-                "total_amount": self.active_competition.believe.amount,
-                "won" : False
-            },
-            "doubt" : {
-                "title": self.active_competition.doubt.title,
-                "users": self.active_competition.doubt.users,
-                "total_amount": self.active_competition.doubt.amount,
-                "won" : False
-            },
-            "is_active" : True,
-            "is_anonymous" : self.active_competition.is_anonymous,
-            "bet_minimum": self.active_competition.bet_minimum
-        })
-
-        # SECTION: Text Formatting for return
-        self.active_competition.timer = duration
-        self.active_competition.end_time = datetime.datetime.now() + datetime.timedelta(seconds=duration)
-        minutes, seconds = divmod(duration, 60)
+        minutes, seconds = divmod(self.active_competition.timer, 60)
+        self.active_competition.timer -= 1
+        time.sleep(1)
 
         anon_text = ""
         if self.active_competition.is_anonymous:
@@ -106,11 +90,7 @@ class Guild():
             anonymous = anon_text,
             bet_min = self.active_competition.bet_minimum
         )
-    
-    def get_user_points(self, user: discord.User):
-        record = self.user_points_collection.find_one({"_id" : user.id})
-        return record["points"]
-    
+
     async def set_user_bet(self, interaction: discord.Interaction, amount: int, is_doubter: bool) -> str:
         if not self.active_competition:
             await interaction.response.send_message(language.Language().output_string("betting_prediction_over_error").format(
@@ -254,6 +234,50 @@ class Guild():
                 mention = interaction.user.mention
             ), ephemeral = True)
     
+    def start_competition(self, title: str, duration: int, believe_reason: str, doubt_reason: str, is_anonymous: bool, bet_minimum: int) -> str:
+        self.active_competition: Competition = Competition(title, believe_reason, doubt_reason, self, is_anonymous, bet_minimum)
+        logger.info(f"Creating a new competition: \n  ID: {self.active_competition.id}\n  Title: {self.active_competition.title}\n  Guild: {self}\n  Is_Anonymous: {self.active_competition.is_anonymous}\n  Bet_Minimum: {self.active_competition.bet_minimum}")
+
+        self.competition_history_collection.insert_one({
+            "_id" : self.active_competition.id,
+            "title" : self.active_competition.title,
+            "believe" : {
+                "title": self.active_competition.believe.title,
+                "users": self.active_competition.believe.users,
+                "total_amount": self.active_competition.believe.amount,
+                "won" : False
+            },
+            "doubt" : {
+                "title": self.active_competition.doubt.title,
+                "users": self.active_competition.doubt.users,
+                "total_amount": self.active_competition.doubt.amount,
+                "won" : False
+            },
+            "is_active" : True,
+            "is_anonymous" : self.active_competition.is_anonymous,
+            "bet_minimum": self.active_competition.bet_minimum
+        })
+
+        # SECTION: Text Formatting for return
+        self.active_competition.timer = duration
+        self.active_competition.end_time = datetime.datetime.now() + datetime.timedelta(seconds=duration)
+        minutes, seconds = divmod(duration, 60)
+
+        anon_text = ""
+        if self.active_competition.is_anonymous:
+            anon_text = "Enabled"
+        else:
+            anon_text = "Disabled"
+
+        return language.Language().output_string("predict_start").format(
+            competition_title = self.active_competition.title,
+            believe = self.active_competition.believe.title,
+            doubt = self.active_competition.doubt.title,
+            duration = language.Language().format_time(minutes, seconds),
+            anonymous = anon_text,
+            bet_min = self.active_competition.bet_minimum
+        )
+
     async def end_competition(self, interaction: discord.Interaction, winner_type_value):
         text_controller = language.Language()
         # Resets the clocks to stop the while loop from having to keep executing
@@ -301,28 +325,6 @@ class Guild():
         
         self.active_competition = None
 
-    def check_betting_session_status(self):
-        if not self.active_competition:
-            raise RuntimeError
-
-        minutes, seconds = divmod(self.active_competition.timer, 60)
-        self.active_competition.timer -= 1
-        time.sleep(1)
-
-        anon_text = ""
-        if self.active_competition.is_anonymous:
-            anon_text = "Enabled"
-        else:
-            anon_text = "Disabled"
-
-        return language.Language().output_string("predict_start").format(
-            competition_title = self.active_competition.title,
-            believe = self.active_competition.believe.title,
-            doubt = self.active_competition.doubt.title,
-            duration = language.Language().format_time(minutes, seconds),
-            anonymous = anon_text,
-            bet_min = self.active_competition.bet_minimum
-        )
 
 class Competition_Reason():
     def __init__(self, title: str):
@@ -362,7 +364,6 @@ class Competition():
             }})
         
         self.clear_betting_records(betting_collection)
-
 
     def set_points_winnings(self, guild: discord.Guild, betting_collection: Collection, user_points_collection: Collection, winning_group: int):
         betting_records = betting_collection.find({})

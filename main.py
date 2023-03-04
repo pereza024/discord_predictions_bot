@@ -131,7 +131,7 @@ def run():
                 await interaction.response.send_message(content = guild_instance.start_competition(title, duration, believe_reason, doubt_reason, is_anonymous, bet_minimum),ephemeral = False)
                     
                 while guild_instance.active_competition and guild_instance.active_competition.timer >= 0:
-                    await interaction.edit_original_response(content = guild_instance.check_betting_session_status())
+                    await interaction.edit_original_response(content = guild_instance.get_betting_session_status())
             else:
                 await interaction.response.send_message(Language().output_string("predict_in_progress_description"), ephemeral = True)
         else:
