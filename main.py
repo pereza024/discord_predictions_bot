@@ -269,13 +269,12 @@ def run():
     )
     @app_commands.check(is_channel)
     async def points(interaction: discord.Interaction):
-        collection = mongo_client.get_guild_points_collection(interaction.guild)
-        data = collection.find_one({"_id" : interaction.user.id })
-
-        await interaction.response.send_message(bot.language_controller.output_string("points_result").format(
+        guild_instance: Guild = bot.guilds_instances[interaction.guild.id]
+        await interaction.response.send_message(language.Language().output_string("points_result").format(
             mention = interaction.user.mention,
-            amount = round(data["points"])
+            amount = guild_instance.get_user_points(interaction.user)
         ), ephemeral = True)
+
     @points.error
     async def points_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling

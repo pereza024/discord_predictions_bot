@@ -107,7 +107,11 @@ class Guild():
             anonymous = anon_text,
             bet_min = self.active_competition.bet_minimum
         )
-
+    
+    def get_user_points(self, user: discord.User):
+        record = self.user_points_collection.find_one({"_id" : user.id})
+        return record["points"]
+    
     async def user_bet(self, interaction: discord.Interaction, amount: int, is_doubter: bool) -> str:
         if not self.active_competition:
             await interaction.response.send_message(language.Language().output_string("betting_prediction_over_error").format(
