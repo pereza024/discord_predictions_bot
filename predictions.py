@@ -102,7 +102,7 @@ class Guild():
             competition_title = self.active_competition.title,
             believe = self.active_competition.believe.title,
             doubt = self.active_competition.doubt.title,
-            duration = self.active_competition.format_time(minutes, seconds),
+            duration = language.Language().format_time(minutes, seconds),
             anonymous = anon_text,
             bet_min = self.active_competition.bet_minimum
         )
@@ -319,7 +319,7 @@ class Guild():
             competition_title = self.active_competition.title,
             believe = self.active_competition.believe.title,
             doubt = self.active_competition.doubt.title,
-            duration = self.active_competition.format_time(minutes, seconds),
+            duration = language.Language().format_time(minutes, seconds),
             anonymous = anon_text,
             bet_min = self.active_competition.bet_minimum
         )
@@ -345,9 +345,6 @@ class Competition():
         self.doubt: Competition_Reason = Competition_Reason(doubt_reason)
         self.is_anonymous: bool = is_anonymous
         self.bet_minimum: int = bet_minimum
-
-    def format_time(self, minutes: int, seconds: int):
-        return '{:02d}:{:02d}'.format(minutes, seconds)
 
     def create_user_history_record(self, user: discord.User, amount: int = 0):
         return {
