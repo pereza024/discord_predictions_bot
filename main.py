@@ -16,7 +16,6 @@ class Prediction_Bot(commands.Bot):
     Timer: int = -1
     end_time: int = -1
     active_competition: Competition = None
-    language_controller = language.Language()
 
     voice_channel_threads = []
 
@@ -56,7 +55,7 @@ def run():
         
     @bot.event
     async def on_ready():
-        logger.info(bot.language_controller.output_string("bot_login").format(user = bot.user, id = bot.user.id))
+        logger.info(language.Language().output_string("bot_login").format(user = bot.user, id = bot.user.id))
         await bot.tree.sync()
 
         # Registers the Discord Servers into the DB
@@ -99,7 +98,7 @@ def run():
     )
     @bot.tree.command(
         name="predict",
-        description=bot.language_controller.output_string("predict_command_description"),
+        description=language.Language().output_string("predict_command_description"),
     )
     async def predict(
         interaction: discord.Interaction,
@@ -137,10 +136,10 @@ def run():
     ###
     @bot.tree.command(
         name="believe",
-        description=bot.language_controller.output_string("believe_command_description")
+        description=language.Language().output_string("believe_command_description")
     )
     @app_commands.describe(
-        amount = bot.language_controller.output_string("betting_amount_description")
+        amount = language.Language().output_string("betting_amount_description")
     )
     @app_commands.check(is_channel)
     async def believe(interaction: discord.Interaction, amount: int):
@@ -149,12 +148,12 @@ def run():
     @believe.error
     async def believe_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
-        logger.error(bot.language_controller.output_string("logging_error").format(
+        logger.error(language.Language().output_string("logging_error").format(
             display_name = interaction.user.display_name,
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(language.Language().output_string("generic_error"), ephemeral = True)
     
     ###
     ### Discord Bot Command - /doubt
@@ -162,10 +161,10 @@ def run():
     ###  
     @bot.tree.command(
         name="doubt",
-        description=bot.language_controller.output_string("doubt_command_description")
+        description=language.Language().output_string("doubt_command_description")
     )
     @app_commands.describe(
-        amount = bot.language_controller.output_string("betting_amount_description")
+        amount = language.Language().output_string("betting_amount_description")
     )
     @app_commands.check(is_channel)
     async def doubt(interaction: discord.Interaction, amount: int):
@@ -174,12 +173,12 @@ def run():
     @doubt.error
     async def doubt_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
-        logger.error(bot.language_controller.output_string("logging_error").format(
+        logger.error(language.Language().output_string("logging_error").format(
             display_name = interaction.user.display_name,
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(language.Language().output_string("generic_error"), ephemeral = True)
 
     ###
     ### Discord Bot Command - /refund
@@ -187,7 +186,7 @@ def run():
     ###  
     @bot.tree.command(
         name="refund",
-        description=bot.language_controller.output_string("refund_command_description")
+        description=language.Language().output_string("refund_command_description")
     )
     @app_commands.default_permissions()
     @app_commands.check(is_owner and is_channel)
@@ -196,16 +195,16 @@ def run():
         if guild_instance.active_competition:
             await guild_instance.end_competition(interaction, language.end_text_reasons.REFUND.value)
         else:
-            await interaction.response.send_message(bot.language_controller.output_string("refund_prediction_over"), ephemeral = True)
+            await interaction.response.send_message(language.Language().output_string("refund_prediction_over"), ephemeral = True)
     @refund.error
     async def refund_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
-        logger.error(bot.language_controller.output_string("logging_error").format(
+        logger.error(language.Language().output_string("logging_error").format(
             display_name = interaction.user.display_name,
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(language.Language().output_string("generic_error"), ephemeral = True)
 
     ###
     ### Discord Bot Command - /winner
@@ -213,11 +212,11 @@ def run():
     ###  
     @bot.tree.command(
         name="winner",
-        description=bot.language_controller.output_string("winner_command_description")
+        description=language.Language().output_string("winner_command_description")
     )
     @app_commands.check(is_owner and is_channel)
     @app_commands.describe(
-        winner_type = bot.language_controller.output_string("winner_type_description")
+        winner_type = language.Language().output_string("winner_type_description")
     )
     @app_commands.choices(winner_type =[
         Choice(name="Believer", value=1),
@@ -228,16 +227,16 @@ def run():
         if guild_instance.active_competition:
             await guild_instance.end_competition(interaction, winner_type.value)
         else:
-            await interaction.response.send_message(bot.language_controller.output_string("winner_prediction_over"), ephemeral = True)
+            await interaction.response.send_message(language.Language().output_string("winner_prediction_over"), ephemeral = True)
     @winner.error
     async def winner_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
-        logger.error(bot.language_controller.output_string("logging_error").format(
+        logger.error(language.Language().output_string("logging_error").format(
             display_name = interaction.user.display_name,
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(language.Language().output_string("generic_error"), ephemeral = True)
 
     ###
     ### Discord Bot Command - /points
@@ -245,7 +244,7 @@ def run():
     ###  
     @bot.tree.command(
         name="points",
-        description=bot.language_controller.output_string("points_command_description")
+        description=language.Language().output_string("points_command_description")
     )
     @app_commands.check(is_channel)
     async def points(interaction: discord.Interaction):
@@ -258,12 +257,12 @@ def run():
     @points.error
     async def points_error(interaction: discord.Interaction, error):
         #TODO: Specific error handling
-        logger.error(bot.language_controller.output_string("logging_error").format(
+        logger.error(language.Language().output_string("logging_error").format(
             display_name = interaction.user.display_name,
             id = interaction.user.id,
             error = error
         ))
-        await interaction.response.send_message(bot.language_controller.output_string("generic_error"), ephemeral = True)
+        await interaction.response.send_message(language.Language().output_string("generic_error"), ephemeral = True)
 
     ###
     ### Discord Bot Command - /check_bet
@@ -271,7 +270,7 @@ def run():
     ###  
     @bot.tree.command(
         name="check_bet",
-        description=bot.language_controller.output_string("check_bet_command_description")
+        description=language.Language().output_string("check_bet_command_description")
     )
     @app_commands.check(is_channel)
     async def check_bet(interaction: discord.Interaction):
@@ -291,11 +290,11 @@ def run():
     ###  
     @bot.tree.command(
         name="leaderboard",
-        description=bot.language_controller.output_string("leaderboard_command_description")
+        description=language.Language().output_string("leaderboard_command_description")
     )
     async def leaderboard(interaction: discord.Interaction):
         results: list = mongo_client.get_guild_points_leaderboard(interaction.guild)
-        await interaction.response.send_message(bot.language_controller.format_leaderboard(interaction.guild, results))
+        await interaction.response.send_message(language.Language().format_leaderboard(interaction.guild, results))
     
     bot.run(setting.DISCORD_API_TOKEN, root_logger = True)
 
