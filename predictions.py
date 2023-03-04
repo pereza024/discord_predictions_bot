@@ -1,4 +1,5 @@
 import secrets, bson, datetime, time
+from threading import Timer
 
 import language
 from setting import logger
@@ -47,6 +48,27 @@ class Guild():
             
             self.active_competition.doubt.amount = record["doubt"]["total_amount"]
             self.active_competition.doubt.users = record["doubt"]["users"]
+
+    async def __lookup_voice_channel_activity__(self):
+        logger.info(language.Language().output_string("polling_checker").format(name = self.discord_reference.name))
+        for voice_channel in self.discord_reference.voice_channels:
+            if len(voice_channel.members) > 0:
+                for member in voice_channel.members:
+                    points = 0
+                    if member.voice.deaf or member.voice.self_deaf:
+                        points = random.randint(1 , 5)
+                    else:
+                        points = random.randint(20 , 30)
+                    # self.add_user_points() # Function does not work
+                    logger.info(bot.language_controller.output_string("activity_reward").format(
+                        name = member.display_name or member.name,
+                        id = member.id,
+                        points = points,
+                        guild_name = guild.discord_reference.name
+                    ))
+        
+        this = Timer(60 * 15, check_server_member_status)
+        this.start()
 
     def __init__(self, discord_reference: discord.Guild, database_client: pymongo.MongoClient):
         __user_points__ = "User Points"

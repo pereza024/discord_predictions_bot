@@ -49,28 +49,6 @@ def run():
 
     bot: Prediction_Bot = Prediction_Bot(command_prefix="$$", intents=intents)
 
-    def check_server_member_status():
-        for guild in bot.guilds_instances.values():
-            logger.info(language.Language().output_string("polling_checker").format(name = guild.discord_reference.name))
-            for voice_channel in guild.discord_reference.voice_channels:
-                if len(voice_channel.members) > 0:
-                    for member in voice_channel.members:
-                        points = 0
-                        if member.voice.deaf or member.voice.self_deaf:
-                            points = random.randint(1 , 5)
-                        else:
-                            points = random.randint(20 , 30)
-                        # guild.add_user_points() # Function does not work
-                        logger.info(bot.language_controller.output_string("activity_reward").format(
-                            name = member.display_name or member.name,
-                            id = member.id,
-                            points = points,
-                            guild_name = guild.discord_reference.name
-                        ))
-        
-        this = Timer(60 * 15, check_server_member_status)
-        this.start()
-
     @bot.event
     async def on_connect():
         logger.info("Bot connected to client")
@@ -92,7 +70,8 @@ def run():
         logger.info(f"Finished registering guilds")
         
         # Scan for active users and give them points
-        check_server_member_status()
+        for guild in bot.guilds:
+            await guild.__lookup_voice_channel_activity__()
 
     @bot.event
     async def on_member_join(member: discord.Member):
