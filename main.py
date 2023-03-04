@@ -81,7 +81,8 @@ def run():
     @bot.event
     async def on_member_join(member: discord.Member):
         logger.info(f"Adding in {member.display_name or member.name} (ID: {member.id}) to the {member.guild} collection")
-        # mongo_client.register_new_member(member)
+        guild_instance = bot.guilds_instances[member.guild.id]
+        guild_instance.__create_points_record__(member)
 
     ###
     ### Discord Bot Command - /predict
