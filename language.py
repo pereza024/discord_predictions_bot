@@ -1,6 +1,6 @@
 import math, json
 from enum import Enum
-from competition import Competition
+from predictions import Competition
 from setting import logger
 
 import discord
@@ -21,7 +21,7 @@ class Language():
                                    if language == text["lang"]:
                                           return text["text"]
 
-       def get_prediction_end(self, competition: Competition, reason: end_text_reasons, language: str = "en"):
+       def format_end_competition(self, competition: Competition, reason: end_text_reasons, language: str = "en"):
               if reason == end_text_reasons.REFUND:
                      return self.output_string("refund_issued").format(
                             title = competition.title
@@ -47,7 +47,10 @@ class Language():
                             doubt_percent = round(competition.doubt.amount / (competition.believe.amount + competition.doubt.amount) * 100)
                      )
        
-       def get_leaderboard_text(self, guild: discord.Guild, results: list) -> str:
+       def format_time(self, minutes: int, seconds: int):
+        return '{:02d}:{:02d}'.format(minutes, seconds)
+
+       def format_leaderboard(self, guild: discord.Guild, results: list) -> str:
               text = f"> **{guild.name}'s Points Leaderboard** \n"
 
               for record in results:
