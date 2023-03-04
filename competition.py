@@ -89,6 +89,20 @@ class Competition():
                 }})
         
         self.clear_betting_records(betting_collection)
-
+    
+    async def get_user_bet(self, interaction: discord.Interaction, betting_records: Collection) -> int:
+        user_betting_records = betting_records.find_one({"_id" : interaction.user.id})
+        if user_betting_records:
+            await interaction.response.send_message(language.Language().output_string("check_bet_result").format(
+                mention = interaction.user.mention,
+                amount = user_betting_records["bet_amount"]
+            ), ephemeral = True)
+            return
+        else:
+            await interaction.response.send_message(language.Language().output_string("check_bet_empty").format(
+                mention = interaction.user.mention
+            ))
+            return
+    
     def clear_betting_records(self, collection: Collection):
         collection.delete_many({})

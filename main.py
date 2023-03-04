@@ -296,16 +296,13 @@ def run():
     )
     @app_commands.check(is_channel)
     async def check_bet(interaction: discord.Interaction):
-        collection = mongo_client.get_guild_betting_pool_collection(interaction.guild)
-        data = collection.find_one({"_id" : interaction.user.id })
-
-        if data:
-            await interaction.response.send_message(bot.language_controller.output_string("check_bet_result").format(
-                mention = interaction.user.mention,
-                amount = round(data["points"])
-            ), ephemeral = True)
-        else:
-            await interaction.response.send_message(bot.language_controller.output_string("check_bet_empty").format(
+        guild_instance: Guild= bot.guilds_instances[interaction.guild.id]
+        if guild_instance.active_competition:
+            await guild_instance.active_competition.get_user_bet(interaction, guild_instance.betting_record_collection)
+        # TODO: Add a message for when betting closed
+        # TODO: Add which side the user bet for
+        else: 
+            await interaction.response.send_message(language.Language().output_string("check_bet_empty").format(
                 mention = interaction.user.mention
             ), ephemeral = True)
 
