@@ -9,10 +9,6 @@ import pymongo
 from pymongo.database import Database
 from pymongo.collection import Collection
 
-__user_points__ = "User Points"
-__competition_history__ = "Competitions"
-__betting_pool__ = "Betting Pool"
-
 class Guild():
     __DEFAULT_USER_POINTS__ : int = 1000
 
@@ -53,6 +49,10 @@ class Guild():
             self.active_competition.doubt.users = record["doubt"]["users"]
 
     def __init__(self, discord_reference: discord.Guild, database_client: pymongo.MongoClient):
+        __user_points__ = "User Points"
+        __competition_history__ = "Competitions"
+        __betting_pool__ = "Betting Pool"
+
         self.discord_reference: discord.Guild =  discord_reference
         self.user_points_collection: Collection = self.__fetch_collection__(__user_points__, database_client)
         self.competition_history_collection: Collection = self.__fetch_collection__(__competition_history__, database_client)
